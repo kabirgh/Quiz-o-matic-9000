@@ -1,0 +1,23 @@
+﻿<Window 
+    x:Class="Quiz_o_matic_9000.GameWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="clr-namespace:Quiz_o_matic_9000"
+    mc:Ignorable="d"
+        
+    xmlns:mp="clr-namespace:Microsoft.Multipoint.Sdk.Controls;assembly=Microsoft.Multipoint.Sdk.Controls"
+    Title="Quiz-o-Matic 9000"
+    WindowState="Maximized">
+
+    <Grid Name="grid">
+        <Canvas>
+            <mp:MultipointButton Canvas.Left="2" Canvas.Top="2"
+            Name="mpButton"
+            Height="2"
+            Width="2"/>
+        </Canvas>
+    </Grid>
+    
+</Window>

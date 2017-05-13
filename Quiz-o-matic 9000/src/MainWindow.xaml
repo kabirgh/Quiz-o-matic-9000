@@ -1,0 +1,100 @@
+﻿<Window 
+    x:Class="Quiz_o_matic_9000.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="clr-namespace:Quiz_o_matic_9000.src"
+    mc:Ignorable="d"
+    
+    Title="Quiz-o-Matic 9000"
+    xmlns:mp="clr-namespace:Microsoft.Multipoint.Sdk.Controls;assembly=Microsoft.Multipoint.Sdk.Controls"
+    WindowState="Maximized">
+
+    <Window.Resources>
+        <Geometry x:Key="addIconGeometry">F1 M24,24z M0,0z M19,13L13,13 13,19 11,19 11,13 5,13 5,11 11,11 11,5 13,5 13,11 19,11 19,13z</Geometry>
+        <Geometry x:Key="deleteIconGeometry">F1 M24,24z M0,0z M19,6.41L17.59,5 12,10.59 6.41,5 5,6.41 10.59,12 5,17.59 6.41,19 12,13.41 17.59,19 19,17.59 13.41,12z</Geometry>
+    </Window.Resources>
+
+
+    <Grid Name="mainWindowGrid">
+        <Grid.Background>
+            <ImageBrush Stretch="UniformToFill"  ImageSource="pack://application:,,,/img/bg.png"/>
+        </Grid.Background>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="5*" />
+            <!--Title-->
+            <RowDefinition Height="10*" />
+            <RowDefinition Height="8*" />
+            <!--Add button-->
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+            <!--Space for 10 teams-->
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="6*" />
+            <!--Delete/Add-->
+            <ColumnDefinition Width="3*" />
+            <ColumnDefinition Width="2*" />
+            <!--Team name-->
+            <ColumnDefinition Width="18*" />
+            <ColumnDefinition Width="2*" />
+            <!--Colour select-->
+            <ColumnDefinition Width="5*" />
+            <ColumnDefinition Width="2*" />
+            <!--Mouse registration-->
+            <ColumnDefinition Width="12*" />
+            <!--Empty space-->
+            <ColumnDefinition Width="28*" />
+            <!--Start button-->
+            <ColumnDefinition Width="14*" />
+            <ColumnDefinition Width="6*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Row="1" Grid.Column="1"  Grid.ColumnSpan="6">
+            <TextBlock Name="titleBlock" Foreground="White" VerticalAlignment="Center">
+                Quiz-o-Matic 9000
+            </TextBlock>
+        </Border>
+
+        <mp:MultipointButton Name="addButton" Grid.Row="3" Grid.Column="1">
+            <Path Fill="Green" Width="30" Height="30" Stretch="Fill" Data="{StaticResource addIconGeometry}" />
+        </mp:MultipointButton>
+
+        <mp:MultipointButton Name="deleteButton1" Grid.Row="5" Grid.Column="1">
+            <Path Fill="Red" Width="25" Height="25" Stretch="Fill" Data="{StaticResource deleteIconGeometry}" />
+        </mp:MultipointButton>
+
+        <mp:MultipointButton Name="colorSelectButton1" Grid.Row="5" Grid.Column="5"></mp:MultipointButton>
+
+        <mp:MultipointButton Name="registerMouseButton1" Grid.Row="5" Grid.Column="7">Register mouse</mp:MultipointButton>
+
+        <mp:MultipointButton Name="startButton" Grid.Row="20" Grid.RowSpan="3" Grid.Column="9">Start</mp:MultipointButton>
+
+        <mp:MultipointTextBox Grid.Row="5" Grid.Column="3" Name="textBox1" 
+                              Padding="3,4" Background="White" BorderBrush="LightSteelBlue" />
+
+    </Grid>
+</Window>

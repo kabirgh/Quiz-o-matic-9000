@@ -1,0 +1,9 @@
+﻿<Application x:Class="Quiz_o_matic_9000.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Quiz_o_matic_9000"
+             StartupUri="src/MainWindow.xaml">
+    <Application.Resources>
+         
+    </Application.Resources>
+</Application>
