@@ -340,9 +340,9 @@ namespace Quiz_o_matic_9000
         private void StartButton_Click(object sender, RoutedEventArgs e)
         {
             // No teams on screen
-            if (lastActiveRowPosition < FIRST_DATA_ROW + 2)
+            if (lastActiveRowPosition < FIRST_DATA_ROW)
             {
-                MessageBox.Show("A minimum of two teams are required.",
+                MessageBox.Show("At least 1 team is required.",
                     "Press Esc to close this message box");
 
                 return;
