@@ -10,7 +10,7 @@ Quiz-o-matic is a portable application that does not require a setup. You will n
 
 ## Usage
 There are only 2 screens in the application - the main screen and the game screen.
-![](https://gfycat.com/BlankOilyGreatdane)
+![](https://zippy.gfycat.com/BlankOilyGreatdane.gif)
 On the main screen, you can:
 - Add, name, colour and remove teams
 - Assign mice to teams
@@ -18,6 +18,7 @@ On the main screen, you can:
 On the game screen, clicking a mouse's left mouse button will display a rectangle with the name and colour of the team assigned to that mouse. Subsequent clicks from the same mouse will have no effect. 
 
 Since the Multipoint library Microsoft provides, does not support clicking on the close button (yep), press `Esc` to quit the program. More useful keys are tabled below.
+
 |Key|Function|
 |---|--------|
 |`Esc`|Quit the program|
