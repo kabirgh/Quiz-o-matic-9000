@@ -10,7 +10,7 @@ namespace Quiz_o_matic_9000.src
     {
         private void defaultRoutedEventHandler(object sender, RoutedEventArgs e) { }
         
-        // Assumption: only one element per grid cell
+        // Assumption: only one element of type T per grid cell
         // Iterates through grid children to find element that matches row and column
         public static T GetUiElement<T>(Grid grid, int row, int col) where T : UIElement
         {

@@ -160,6 +160,8 @@ namespace Quiz_o_matic_9000
                 }
 
                 Content = mainPageContent;
+
+                // TODO: restore previous team colours
             }
         }
 
