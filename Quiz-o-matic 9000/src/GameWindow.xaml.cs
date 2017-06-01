@@ -40,6 +40,7 @@ namespace Quiz_o_matic_9000
                 textblock.Text = "";
             }
 
+            pressed = new HashSet<int>();
             rowPosition = 1;
         }
 

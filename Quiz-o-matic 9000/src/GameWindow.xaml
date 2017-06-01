@@ -8,7 +8,7 @@
     mc:Ignorable="d"
         
     xmlns:mp="clr-namespace:Microsoft.Multipoint.Sdk.Controls;assembly=Microsoft.Multipoint.Sdk.Controls"
-    Title="Quiz-o-Matic 9000"
+    Title="Quiz-o-matic 9000"
     WindowState="Maximized">
 
     <Grid Name="grid">

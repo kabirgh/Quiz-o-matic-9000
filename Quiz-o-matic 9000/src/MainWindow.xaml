@@ -7,7 +7,7 @@
     xmlns:local="clr-namespace:Quiz_o_matic_9000.src"
     mc:Ignorable="d"
     
-    Title="Quiz-o-Matic 9000"
+    Title="Quiz-o-matic 9000"
     xmlns:mp="clr-namespace:Microsoft.Multipoint.Sdk.Controls;assembly=Microsoft.Multipoint.Sdk.Controls"
     WindowState="Maximized">
 
@@ -75,7 +75,7 @@
 
         <Border Grid.Row="1" Grid.Column="1"  Grid.ColumnSpan="6">
             <TextBlock Name="titleBlock" Foreground="White" VerticalAlignment="Center">
-                Quiz-o-Matic 9000
+                Quiz-o-matic 9000
             </TextBlock>
         </Border>
 

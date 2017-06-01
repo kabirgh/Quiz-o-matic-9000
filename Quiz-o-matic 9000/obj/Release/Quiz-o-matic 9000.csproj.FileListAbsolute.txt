@@ -6,15 +6,6 @@ C:\Users\Kabir\documents\visual studio 2015\Projects\Quiz-o-matic 9000 v2\Quiz-o
 C:\Users\Kabir\documents\visual studio 2015\Projects\Quiz-o-matic 9000 v2\Quiz-o-matic 9000 v2\obj\Release\src\GameWindow.baml
 C:\Users\Kabir\documents\visual studio 2015\Projects\Quiz-o-matic 9000 v2\Quiz-o-matic 9000 v2\obj\Release\src\MainWindow.baml
 C:\Users\Kabir\documents\visual studio 2015\Projects\Quiz-o-matic 9000 v2\Quiz-o-matic 9000 v2\obj\Release\Quiz-o-matic 9000.csproj.GenerateResource.Cache
-C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\bin\Release\Microsoft.Multipoint.Sdk.Controls.dll
-C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\bin\Release\Microsoft.Multipoint.Sdk.dll
-C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\src\GameWindow.g.cs
-C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\src\MainWindow.g.cs
-C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\App.g.cs
-C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\src\GameWindow.baml
-C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\src\MainWindow.baml
-C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000.csproj.GenerateResource.Cache
-C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\bin\Release\Quiz-o-matic 9000.exe.config
 C:\Users\Kabir\documents\visual studio 2015\Projects\Quiz-o-matic 9000 v2\Quiz-o-matic 9000 v2\obj\Release\Quiz-o-matic 9000.csprojResolveAssemblyReference.cache
 C:\Users\Kabir\documents\visual studio 2015\Projects\Quiz-o-matic 9000 v2\Quiz-o-matic 9000 v2\bin\Release\Quiz-o-matic 9000.exe.config
 C:\Users\Kabir\documents\visual studio 2015\Projects\Quiz-o-matic 9000 v2\Quiz-o-matic 9000 v2\bin\Release\Quiz-o-matic 9000.exe.manifest
@@ -30,17 +21,25 @@ C:\Users\Kabir\documents\visual studio 2015\Projects\Quiz-o-matic 9000 v2\Quiz-o
 C:\Users\Kabir\documents\visual studio 2015\Projects\Quiz-o-matic 9000 v2\Quiz-o-matic 9000 v2\obj\Release\Quiz-o-matic 9000.application
 C:\Users\Kabir\documents\visual studio 2015\Projects\Quiz-o-matic 9000 v2\Quiz-o-matic 9000 v2\obj\Release\Quiz-o-matic 9000.exe
 C:\Users\Kabir\documents\visual studio 2015\Projects\Quiz-o-matic 9000 v2\Quiz-o-matic 9000 v2\obj\Release\Quiz-o-matic 9000.pdb
-C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000.exe
-C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000.pdb
+C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\bin\Release\Quiz-o-matic 9000.exe.config
 C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\bin\Release\Quiz-o-matic 9000.exe.manifest
 C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\bin\Release\Quiz-o-matic 9000.application
 C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\bin\Release\Quiz-o-matic 9000.exe
 C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\bin\Release\Quiz-o-matic 9000.pdb
-C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000.csprojResolveAssemblyReference.cache
+C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\bin\Release\Microsoft.Multipoint.Sdk.Controls.dll
+C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\bin\Release\Microsoft.Multipoint.Sdk.dll
+C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\src\GameWindow.g.cs
+C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\src\MainWindow.g.cs
+C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\App.g.cs
 C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000_Content.g.cs
 C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000_MarkupCompile.cache
 C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000_MarkupCompile.lref
+C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\src\GameWindow.baml
+C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\src\MainWindow.baml
 C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000.g.resources
 C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz_o_matic_9000.Properties.Resources.resources
+C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000.csproj.GenerateResource.Cache
 C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000.exe.manifest
 C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000.application
+C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000.exe
+C:\Users\Kabir\Documents\Visual Studio 2015\Projects\Quiz-o-matic 9000\Quiz-o-matic 9000\obj\Release\Quiz-o-matic 9000.pdb
