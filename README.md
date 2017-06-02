@@ -21,6 +21,9 @@ On the main screen, you can:
 When you're done, click the `Start` button to go to the game screen.
 
 ### Game screen
+
+![](https://zippy.gfycat.com/LegalDeliciousBustard.gif)
+
 The first team to click their mouse will show up on a rectangle with their name and colour at the top of the screen. Teams that click afterwards will be shown below. Further clicks from the same mouse will have no effect.
 To remove all teams from the screen, press `R` on your keyboard. 
 Since the Multipoint library Microsoft provides does not support clicking on the close button (yep, seriosuly), press `Esc` to quit the program. All keys used in the application are tabled below.
