@@ -10,20 +10,23 @@ namespace Quiz_o_matic_9000.src
     {
         private void defaultRoutedEventHandler(object sender, RoutedEventArgs e) { }
         
-        // Assumption: only one element of type T per grid cell
+        // Assumption: only zero or one elements of type T per grid cell
         // Iterates through grid children to find element that matches row and column
         public static T GetUiElement<T>(Grid grid, int row, int col) where T : UIElement
         {
             return grid.Children
                .OfType<T>()
-               .First(elem => Grid.GetRow(elem) == row && Grid.GetColumn(elem) == col);
+               .FirstOrDefault(elem => Grid.GetRow(elem) == row && Grid.GetColumn(elem) == col);
         }
 
         // Assumption: only one element of type T per grid cell
         public static void RemoveUiElement<T>(Grid grid, int row, int col) where T : UIElement
         {
             var elem = GetUiElement<T>(grid, row, col);
-            grid.Children.Remove(elem);
+            if (elem != null)
+            {
+                grid.Children.Remove(elem);
+            }
         }
 
 

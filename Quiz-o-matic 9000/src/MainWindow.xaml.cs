@@ -16,9 +16,10 @@ namespace Quiz_o_matic_9000
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region State variables
         private const int DATA_ROW_SIZE = 5;
         private const int SPACER_ROW_SIZE = 2;
-
+        
         private const int FIRST_DATA_ROW = 5;
         private const int START_BTN_ROW = 20;
 
@@ -31,8 +32,8 @@ namespace Quiz_o_matic_9000
         private const int MAX_LAST_ACTIVE_ROW_POS = 23;
         private int lastActiveRowPosition = 5;
 
-        // Row number: mouse ID
-        private int[] mouseIds = new int[10];
+        // Row number: device ID
+        private int[] deviceIds = new int[10] { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
         // Row number: fill of colour select button
         private Color[] rowColours = new Color[10];
@@ -44,13 +45,13 @@ namespace Quiz_o_matic_9000
         // Stores state of main window. When backspace is pressed, game screen reverts back to previous screen
         private object mainPageContent;
         private GameWindow gameWindow = new GameWindow();
+        #endregion
 
+        private enum RegisterButtonType { Register, Confirm };
 
         public MainWindow()
         {
             InitializeComponent();
-
-            Util.FillArray(mouseIds, -1);
 
             Loaded += MainWindow_Loaded;
             KeyDown += KeyDown_Event_Main;
@@ -69,9 +70,34 @@ namespace Quiz_o_matic_9000
 
             startButton.Loaded += StartButton_Loaded;
             startButton.MultipointClick += StartButton_Click;
+
+            var onRegister = new Progress<int>(buzzerId =>
+            {
+                Buzzer_OnRegister(buzzerId);
+            }) as IProgress<int>;
+
+            var onClick = new Progress<int>(buzzerId =>
+            {
+                // Ignore clicks
+            }) as IProgress<int>;
+
+            var onError = new Progress<string>(err =>
+            {
+                MessageBox.Show(err, "Press Esc to close this message box");
+            }) as IProgress<string>;
+
+            // Create websocket server in background thread. Background worker syncs with ui thread via handlers passed into method
+            Server.Start(onRegister, onClick, onError);
         }
 
+        private void Buzzer_OnRegister(int buzzerNumber)
+        {
+            int rowId = MainPageUtil.GridRowToId(GetNextRowPosition());
+            deviceIds[rowId] = buzzerNumber;
+            AddRow(RegisterButtonType.Confirm);
+        }
 
+        #region UI element loaded handlers
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             titleBlock.FontFamily = FontStore.Arvo;
@@ -125,8 +151,9 @@ namespace Quiz_o_matic_9000
             var startBtn = (MultipointButton)sender;
             startBtn.FontSize = startBtn.ActualHeight / 3;
         }
+        #endregion
 
-
+        #region Keydown handlers
         public void KeyDown_Event_Main(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
@@ -164,15 +191,21 @@ namespace Quiz_o_matic_9000
                 // TODO: restore previous team colours
             }
         }
+        #endregion
 
-
+        #region Button click handlers and related methods
         private void AddButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Button was clicked by mouse, not triggered by wireless connection. Allow mouse registration
+            AddRow(RegisterButtonType.Register);
+        }
+
+        private void AddRow(RegisterButtonType btnType)
         {
             if (lastActiveRowPosition >= MAX_LAST_ACTIVE_ROW_POS)
             {
                 return;
             }
-
 
             // Colour select button
             SolidColorBrush fill;
@@ -196,7 +229,7 @@ namespace Quiz_o_matic_9000
             rect.Stroke = new SolidColorBrush(Colors.Black);
             rect.StrokeThickness = 1;
             rect.Stretch = Stretch.Fill;
-            GridUtil.AttachMultipointButton(mainWindowGrid, lastActiveRowPosition, COLOUR_SELECT_COL, rect, 
+            GridUtil.AttachMultipointButton(mainWindowGrid, lastActiveRowPosition, COLOUR_SELECT_COL, rect,
                 clickHandler: ColourSelect_Click);
             coloursUsed.Add(fill.Color);
             rowColours[MainPageUtil.GridRowToId(lastActiveRowPosition)] = fill.Color;
@@ -208,18 +241,30 @@ namespace Quiz_o_matic_9000
             delIconPath.Height = 25;
             delIconPath.Width = 25;
             delIconPath.Stretch = Stretch.Fill;
-            GridUtil.AttachMultipointButton(mainWindowGrid, lastActiveRowPosition, DEL_BTN_COL, delIconPath, 
+            GridUtil.AttachMultipointButton(mainWindowGrid, lastActiveRowPosition, DEL_BTN_COL, delIconPath,
                 clickHandler: DeleteButton_Click);
 
             // Textbox
-            GridUtil.AttachMultipointTextBox(mainWindowGrid, lastActiveRowPosition, TEXTBOX_COL, 
+            GridUtil.AttachMultipointTextBox(mainWindowGrid, lastActiveRowPosition, TEXTBOX_COL,
                 loadedHandler: TextBox_Loaded);
 
-            // Register mouse button
-            GridUtil.AttachMultipointButton(mainWindowGrid, lastActiveRowPosition, REGISTER_BTN_COL, "Register mouse",
-                 loadedHandler: RegisterButton_Loaded, clickHandler: RegisterButton_Click);
+            if (btnType == RegisterButtonType.Register)
+            {
+                // Register mouse button
+                GridUtil.AttachMultipointButton(mainWindowGrid, lastActiveRowPosition, REGISTER_BTN_COL, "Register mouse",
+                     loadedHandler: RegisterButton_Loaded, clickHandler: RegisterButton_Click);
+            }
+            else if (btnType == RegisterButtonType.Confirm)
+            {
+                // Confirm team name for wireless device button
+                GridUtil.AttachMultipointButton(mainWindowGrid, lastActiveRowPosition, REGISTER_BTN_COL, "Confirm",
+                     loadedHandler: RegisterButton_Loaded, clickHandler: ConfirmButton_Click);
+            }
+            else
+            {
+                MessageBox.Show($"Invalid RegisterButtonType {btnType}", "Press Esc to close this message box");
+            }
         }
-
 
         private void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
@@ -233,7 +278,6 @@ namespace Quiz_o_matic_9000
             GridUtil.RemoveUiElement<MultipointButton>(mainWindowGrid, btnRow, COLOUR_SELECT_COL);
 
             // Shift controls up
-            // TODO: find faster solution
             var elements = mainWindowGrid.Children;
             for (int i = 0; i < elements.Count; i++)
             {
@@ -248,15 +292,14 @@ namespace Quiz_o_matic_9000
                 }
             }
 
-            DataStore.teams.Remove(mouseIds[MainPageUtil.GridRowToId(btnRow)]);
-            Util.LeftShiftArray(mouseIds, rowId, 1, -1);
+            DataStore.teams.Remove(deviceIds[MainPageUtil.GridRowToId(btnRow)]);
+            Util.LeftShiftArray(deviceIds, rowId, -1);
 
             coloursUsed.Remove(rowColours[rowId]);
-            Util.LeftShiftArray(rowColours, rowId, 1, default(Color));
+            Util.LeftShiftArray(rowColours, rowId, default(Color));
 
             lastActiveRowPosition -= 2;
         }
-
 
         private void ColourSelect_Click(object sender, RoutedEventArgs e)
         {
@@ -289,55 +332,64 @@ namespace Quiz_o_matic_9000
             rowColours[rowId] = fill.Color;
         }
 
-
-        // Choose next colour not already assigned to a team
-        private SolidColorBrush GetNextUnassignedColour()
+        // For wireless buzzer registration, buzzer is already assigned to row. Don't take
+        // device id from mouse clicking the confirm button
+        private void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
-            int cachedIndex = lastUsedColourIndex;
+            int btnRow = Grid.GetRow((MultipointButton)sender);
+            int rowId = MainPageUtil.GridRowToId(btnRow);
+            // device id was saved to array when row was created
+            int deviceId = deviceIds[rowId];
 
-            for (int i = cachedIndex; i < DataStore.teamColours.Length + cachedIndex; i++)
+            var didSave = SaveTeam(deviceId, btnRow, rowId);
+
+            if (didSave)
             {
-                lastUsedColourIndex = (i + 1) % DataStore.teamColours.Length;
-                if (!coloursUsed.Contains(DataStore.teamColours[lastUsedColourIndex].Color))
-                {
-                    return DataStore.teamColours[lastUsedColourIndex];
-                }
+                // Remove confirm button so user doesn't think device registration can be overriden
+                GridUtil.RemoveUiElement<MultipointButton>(mainWindowGrid, btnRow, REGISTER_BTN_COL);
+                // Lock team colour
+                var colourSelect = GridUtil.GetUiElement<MultipointButton>(mainWindowGrid, btnRow, COLOUR_SELECT_COL);
+                colourSelect.MultipointClick -= ColourSelect_Click;
             }
-
-            throw new Exception("There aren't any colours left to assign to this team. Please delete another team before assigning a colour to this one");
         }
-            
 
+        // Mouse registration
         private void RegisterButton_Click(object sender, RoutedEventArgs e)
         {
-            MultipointButton btn = (MultipointButton)sender;
-            int btnRow = Grid.GetRow(btn);
+            int btnRow = Grid.GetRow((MultipointButton)sender);
             int rowId = MainPageUtil.GridRowToId(btnRow);
             int deviceId = ((MultipointMouseEventArgs)e).DeviceInfo.Id;
 
-            var textbox = GridUtil.GetUiElement<MultipointTextBox>(mainWindowGrid, Grid.GetRow(btn), TEXTBOX_COL);
-
             // If mouse already registered for a different team
-            if (DataStore.teams.ContainsKey(deviceId) && mouseIds[rowId] != deviceId)
+            if (DataStore.teams.ContainsKey(deviceId) && deviceIds[rowId] != deviceId)
             {
                 MessageBox.Show("This mouse has already been assigned to team '" + DataStore.teams[deviceId].Name +
                     "'. Please delete the team entry before re-assigning this mouse.",
                     "Press Esc to close this message box");
             }
-            else if (textbox.Text.Trim() == "")
-            {
-                MessageBox.Show("Team name is invalid.",
-                    "Press Esc to close this message box");
-            }
             else
             {
-                var colourSelectButton = GridUtil.GetUiElement<MultipointButton>(mainWindowGrid, btnRow, COLOUR_SELECT_COL);
-                Rectangle rect = (Rectangle)colourSelectButton.Content;
-                DataStore.teams[deviceId] = new TeamData(textbox.Text, (SolidColorBrush)rect.Fill);
-                mouseIds[rowId] = deviceId;
+                SaveTeam(deviceId, btnRow, rowId);
             }
         }
 
+        // Returns bool indicating whether error occurred or save was successful
+        private bool SaveTeam(int deviceId, int btnRow, int rowId)
+        {
+            var textbox = GridUtil.GetUiElement<MultipointTextBox>(mainWindowGrid, btnRow, TEXTBOX_COL);
+            if (textbox.Text.Trim() == "")
+            {
+                MessageBox.Show("Team name is invalid.", "Press Esc to close this message box");
+                return false;
+            }
+
+            var colourSelectButton = GridUtil.GetUiElement<MultipointButton>(mainWindowGrid, btnRow, COLOUR_SELECT_COL);
+            Rectangle rect = (Rectangle)colourSelectButton.Content;
+            DataStore.teams[deviceId] = new TeamData(textbox.Text, (SolidColorBrush)rect.Fill);
+            deviceIds[rowId] = deviceId;
+
+            return true;
+        }
 
         private void StartButton_Click(object sender, RoutedEventArgs e)
         {
@@ -353,7 +405,7 @@ namespace Quiz_o_matic_9000
             for (int i = 0; i <= MainPageUtil.GridRowToId(lastActiveRowPosition); i++)
             {
                 // Team has no registered mouse
-                if (mouseIds[i] == -1)
+                if (deviceIds[i] == -1)
                 {
                     var textBox = GridUtil.GetUiElement<MultipointTextBox>(mainWindowGrid, MainPageUtil.RowIdToGridRow(i), TEXTBOX_COL);
 
@@ -372,6 +424,29 @@ namespace Quiz_o_matic_9000
             mainPageContent = Content;
             Content = gameWindow.Content;
         }
+        #endregion
 
+        // Choose next colour not already assigned to a team
+        private SolidColorBrush GetNextUnassignedColour()
+        {
+            int cachedIndex = lastUsedColourIndex;
+
+            for (int i = cachedIndex; i < DataStore.teamColours.Length + cachedIndex; i++)
+            {
+                lastUsedColourIndex = (i + 1) % DataStore.teamColours.Length;
+                if (!coloursUsed.Contains(DataStore.teamColours[lastUsedColourIndex].Color))
+                {
+                    return DataStore.teamColours[lastUsedColourIndex];
+                }
+            }
+
+            throw new Exception("There aren't any colours left to assign to this team. Please delete another team before assigning a colour to this one");
+        }
+
+        // Returns -1 if no more valid row positions
+        private int GetNextRowPosition()
+        {
+            return (lastActiveRowPosition >= MAX_LAST_ACTIVE_ROW_POS) ? -1 : lastActiveRowPosition + 2;
+        }
     }
 }

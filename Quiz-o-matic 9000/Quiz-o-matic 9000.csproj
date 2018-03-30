@@ -105,6 +105,7 @@
     <Compile Include="src\FontStore.cs" />
     <Compile Include="src\GridUtil.cs" />
     <Compile Include="src\MainPageUtil.cs" />
+    <Compile Include="src\Server.cs" />
     <Compile Include="src\TeamData.cs" />
     <Compile Include="src\Util.cs" />
     <Page Include="src\GameWindow.xaml">

@@ -1,28 +1,20 @@
-﻿
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
 namespace Quiz_o_matic_9000.src
 {
-    class Util : MainWindow
+    class Util
     {
-        public static void FillArray<T>(T[] array, T value)
+        public static void LeftShiftArray<T>(T[] array, int startIdx, T defaultVal)
         {
-            for (int i = 0; i < array.Length; i++)
+            for (int i = startIdx; i < array.Length - 1; i++)
             {
-                array[i] = value;
+                array[i] = array[i + 1];
             }
-        }
-
-        public static void LeftShiftArray<T>(T[] array, int startIdx, int shift, T endVal)
-        {
-            int length = array.Length;
-
-            for (int i = startIdx; i < length - shift; i++)
-            {
-                array[i] = array[ (i + shift) % length];
-            }
-            for (int i = length - shift; i < length; i++)
-            {
-                array[i] = endVal;
-            }
+            array[array.Length - 1] = defaultVal;
         }
     }
 }

@@ -27,10 +27,28 @@ namespace Quiz_o_matic_9000
             // All cursors are fixed to hover over mpButton. Handler determines which device clicked it
             mpButton.MultipointClick += MpButton_Click;
 
+            string lines = "";
+            foreach (KeyValuePair<int, TeamData> kvp in teams)
+            {
+                lines += string.Format("Team #{0}, {1}", kvp.Key, kvp.Value.ToString());
+            }
+
+            // Set new handlers
+            Server.Buzzer_OnRegister = new Progress<int>(buzzerId =>
+            {
+                // Ignore re-registration
+            }) as IProgress<int>;
+
+            Server.Buzzer_OnClick = new Progress<int>(buzzerId =>
+            {
+                RecordClick(buzzerId);
+            }) as IProgress<int>;
+
             // KeyDown event configured in MainWindow.xaml.cs
         }
 
 
+        #region Keydown event handlers
         // Remove all teams from screen
         public void Reset()
         {
@@ -55,11 +73,11 @@ namespace Quiz_o_matic_9000
             {
                 var teamId = entry.Key;
 
-                displayTeam(teamId);
+                DisplayTeam(teamId);
                 pressed.Add(teamId);
             }
         }
-
+        #endregion
 
         private void FreezeMiceAndMakeGrid(object sender, RoutedEventArgs e)
         {
@@ -78,20 +96,19 @@ namespace Quiz_o_matic_9000
             MakeGrid(teams.Count);
         }
 
-
+        // Click handler
         private void MpButton_Click(object sender, RoutedEventArgs e)
         {
             MultipointMouseEventArgs multipointargs = e as MultipointMouseEventArgs;
-
-            if (e == null)
-            {
-                throw new System.Exception("Mouse button click handler received an invalid event argument.");
-            }
-
             int deviceId = multipointargs.DeviceInfo.Id;
+            RecordClick(deviceId);
+        }
+
+        private void RecordClick(int deviceId)
+        {
             if (!pressed.Contains(deviceId))
             {
-                displayTeam(deviceId);
+                DisplayTeam(deviceId);
                 pressed.Add(deviceId);
             }
         }
@@ -99,7 +116,7 @@ namespace Quiz_o_matic_9000
 
         // Displays team on the next row
         // Only this function and Reset should mutate rowPosition
-        private void displayTeam(int teamId)
+        private void DisplayTeam(int teamId)
         {
             TeamData teamData = teams[teamId];
 
