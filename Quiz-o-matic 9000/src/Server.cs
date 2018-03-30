@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Threading;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 
@@ -8,27 +8,28 @@ namespace Quiz_o_matic_9000
 {
     public class Server
     {
-        private static WebSocketServer wssv;
+        private static WebSocketServer server;
         public static IProgress<int> Buzzer_OnRegister;
         public static IProgress<int> Buzzer_OnClick;
         public static IProgress<string> Buzzer_OnError;
 
-        // Never returns. UI thread receives updates from callbacks passed to method
-        public static async void Start(IProgress<int> Buzzer_OnRegister, 
-                                       IProgress<int> Buzzer_OnClick,
-                                       IProgress<string> Buzzer_OnError)
+        // UI thread receives updates from callbacks passed to method
+        public static void Start(IProgress<int> Buzzer_OnRegister, IProgress<int> Buzzer_OnClick,
+                                 IProgress<string> Buzzer_OnError)
         {
-            wssv = new WebSocketServer(4649);
-            wssv.AddWebSocketService<BuzzerBehaviour>("/buzz");
+            server = new WebSocketServer(4649);
+            server.AddWebSocketService<BuzzerBehaviour>("/buzz");
 
             Server.Buzzer_OnRegister = Buzzer_OnRegister;
             Server.Buzzer_OnClick = Buzzer_OnClick;
             Server.Buzzer_OnError = Buzzer_OnError;
 
-            await Task.Run(() =>
-            {
-                wssv.Start();
-            });
+            server.Start();
+        }
+
+        public static void Stop()
+        {
+            server.Stop();
         }
 
         class BuzzerBehaviour : WebSocketBehavior

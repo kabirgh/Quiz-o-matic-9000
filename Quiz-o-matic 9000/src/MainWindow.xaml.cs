@@ -19,7 +19,7 @@ namespace Quiz_o_matic_9000
         #region State variables
         private const int DATA_ROW_SIZE = 5;
         private const int SPACER_ROW_SIZE = 2;
-        
+
         private const int FIRST_DATA_ROW = 5;
         private const int START_BTN_ROW = 20;
 
@@ -158,6 +158,7 @@ namespace Quiz_o_matic_9000
         {
             if (e.Key == Key.Escape)
             {
+                Server.Stop();
                 MultipointSdk.Instance.Dispose();
                 Application.Current.Shutdown();
             }
@@ -167,6 +168,7 @@ namespace Quiz_o_matic_9000
         {
             if (e.Key == Key.Escape)
             {
+                Server.Stop();
                 MultipointSdk.Instance.Dispose();
                 Application.Current.Shutdown();
             }
