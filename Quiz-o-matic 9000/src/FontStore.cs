@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Windows.Media;
 
 namespace Quiz_o_matic_9000.src
@@ -12,9 +11,7 @@ namespace Quiz_o_matic_9000.src
 
         static FontStore()
         {
-            string currentDirectory = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
-            string pathToArvo = Path.GetFullPath(Path.Combine(currentDirectory, @"..\..\fonts\"));
-            Arvo = Fonts.GetFontFamilies(new Uri(pathToArvo)).First();
+            Arvo = new FontFamily(new Uri("pack://application:,,,/fonts/Arvo-Regular.ttf"), "Arvo");
         }
     }
 }

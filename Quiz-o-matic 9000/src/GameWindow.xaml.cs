@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.Multipoint.Sdk;
+using System;
 
 namespace Quiz_o_matic_9000
 {
@@ -67,7 +68,7 @@ namespace Quiz_o_matic_9000
 
             foreach (var deviceInfo in MultipointSdk.Instance.MouseDeviceList)
             {
-                deviceInfo.DeviceVisual.CursorBitmap = new System.Drawing.Bitmap(CursorStore.PathToBlankCursor);
+                deviceInfo.DeviceVisual.CursorBitmap = CursorStore.BlankCursor;
 
                 deviceInfo.DeviceVisual.SetPosition((int)btnPos.X, (int)btnPos.Y);
                 deviceInfo.DeviceVisual.DisableMovement = true;

@@ -9,7 +9,8 @@
         
     xmlns:mp="clr-namespace:Microsoft.Multipoint.Sdk.Controls;assembly=Microsoft.Multipoint.Sdk.Controls"
     Title="Quiz-o-matic 9000"
-    WindowState="Maximized">
+    WindowState="Maximized"
+    Icon="pack://application:,,,/icon.ico">
 
     <Grid Name="grid">
         <Canvas>

@@ -83,7 +83,7 @@ namespace Quiz_o_matic_9000
 
             foreach (var deviceInfo in MultipointSdk.Instance.MouseDeviceList)
             {
-                deviceInfo.DeviceVisual.CursorBitmap = new System.Drawing.Bitmap(CursorStore.PathToDefaultCursor);
+                deviceInfo.DeviceVisual.CursorBitmap = CursorStore.DefaultCursor;
             }
         }
 
@@ -156,7 +156,7 @@ namespace Quiz_o_matic_9000
                 foreach (var deviceInfo in MultipointSdk.Instance.MouseDeviceList)
                 {
                     deviceInfo.DeviceVisual.DisableMovement = false;
-                    deviceInfo.DeviceVisual.CursorBitmap = new System.Drawing.Bitmap(CursorStore.PathToDefaultCursor);
+                    deviceInfo.DeviceVisual.CursorBitmap = CursorStore.DefaultCursor;
                 }
 
                 Content = mainPageContent;
