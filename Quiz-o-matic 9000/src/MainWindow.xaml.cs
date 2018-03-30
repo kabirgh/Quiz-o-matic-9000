@@ -92,7 +92,21 @@ namespace Quiz_o_matic_9000
 
         private void Buzzer_OnRegister(int buzzerNumber)
         {
+            if (Array.Exists(deviceIds, id => id == buzzerNumber))
+            {
+                var existingRowId = Array.IndexOf(deviceIds, buzzerNumber);
+                var btnRow = MainPageUtil.RowIdToGridRow(existingRowId);
+                var teamName = GridUtil.GetUiElement<MultipointTextBox>(mainWindowGrid, btnRow, TEXTBOX_COL).Text.Trim();
+                teamName = (teamName == "") ? "<blank>" : teamName;
+
+                MessageBox.Show($"Buzzer {buzzerNumber} is already registered for team {teamName} on row {existingRowId + 1}. " +
+                                $"Please delete the row containing {teamName} if you want to register this buzzer for another team.",
+                                 "Press Esc to close this message box");
+                return;
+            }
+
             int rowId = MainPageUtil.GridRowToId(GetNextRowPosition());
+            // Record that buzzer is attached to this row
             deviceIds[rowId] = buzzerNumber;
             AddRow(RegisterButtonType.Confirm);
         }
