@@ -55,6 +55,7 @@ namespace Quiz_o_matic_9000
 
             Loaded += MainWindow_Loaded;
             KeyDown += KeyDown_Event_Main;
+            Closing += MainWindow_Closing;
 
             addButton.MultipointClick += AddButton_Click;
 
@@ -88,6 +89,12 @@ namespace Quiz_o_matic_9000
 
             // Create websocket server in background thread. Background worker syncs with ui thread via handlers passed into method
             Server.Start(onRegister, onClick, onError);
+        }
+
+        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            Server.Stop();
+            MultipointSdk.Instance.Dispose();
         }
 
         private void Buzzer_OnRegister(int buzzerNumber)
@@ -172,8 +179,6 @@ namespace Quiz_o_matic_9000
         {
             if (e.Key == Key.Escape)
             {
-                Server.Stop();
-                MultipointSdk.Instance.Dispose();
                 Application.Current.Shutdown();
             }
         }
@@ -182,8 +187,6 @@ namespace Quiz_o_matic_9000
         {
             if (e.Key == Key.Escape)
             {
-                Server.Stop();
-                MultipointSdk.Instance.Dispose();
                 Application.Current.Shutdown();
             }
             else if (e.Key == Key.R)

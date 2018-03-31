@@ -9,15 +9,14 @@
         
     xmlns:mp="clr-namespace:Microsoft.Multipoint.Sdk.Controls;assembly=Microsoft.Multipoint.Sdk.Controls"
     Title="Quiz-o-matic 9000"
-    WindowState="Maximized"
-    Icon="pack://application:,,,/icon.ico">
+    WindowState="Maximized">
 
     <Grid Name="grid">
         <Canvas>
-            <mp:MultipointButton Canvas.Left="2" Canvas.Top="2"
+            <mp:MultipointButton Canvas.Left="0" Canvas.Top="0"
             Name="mpButton"
-            Height="2"
-            Width="2"/>
+            Height="30"
+            Width="30"/>
         </Canvas>
     </Grid>
     

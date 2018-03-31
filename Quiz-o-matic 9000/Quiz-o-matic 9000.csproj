@@ -176,8 +176,9 @@
   <ItemGroup>
     <None Include="img\default_cursor.png" />
     <Resource Include="icon.ico" />
-    <Content Include="lib\Microsoft.Multipoint.Sdk.Controls.dll" />
-    <Content Include="lib\Microsoft.Multipoint.Sdk.dll" />
+    <None Include="img\icon.ico" />
+    <None Include="lib\Microsoft.Multipoint.Sdk.Controls.dll" />
+    <None Include="lib\Microsoft.Multipoint.Sdk.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

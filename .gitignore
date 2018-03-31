@@ -1,3 +1,6 @@
 .vs
 **/obj
 **/bin
+*.psess
+*.vsp
+*.vspx
