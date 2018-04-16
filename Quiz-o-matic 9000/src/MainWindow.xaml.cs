@@ -72,6 +72,19 @@ namespace Quiz_o_matic_9000
             startButton.Loaded += StartButton_Loaded;
             startButton.MultipointClick += StartButton_Click;
 
+            var buzzerHandlers = SetBuzzerHandlers();
+            // Create websocket server in background thread. Background worker syncs with ui thread via handlers passed into method
+            Server.Start(buzzerHandlers.Item1, buzzerHandlers.Item2, buzzerHandlers.Item3);
+        }
+
+        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            Server.Stop();
+            MultipointSdk.Instance.Dispose();
+        }
+
+        private Tuple<IProgress<int>, IProgress<int>, IProgress<string>> SetBuzzerHandlers()
+        {
             var onRegister = new Progress<int>(buzzerId =>
             {
                 Buzzer_OnRegister(buzzerId);
@@ -87,14 +100,7 @@ namespace Quiz_o_matic_9000
                 MessageBox.Show(err, "Press Esc to close this message box");
             }) as IProgress<string>;
 
-            // Create websocket server in background thread. Background worker syncs with ui thread via handlers passed into method
-            Server.Start(onRegister, onClick, onError);
-        }
-
-        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            Server.Stop();
-            MultipointSdk.Instance.Dispose();
+            return Tuple.Create(onRegister, onClick, onError);
         }
 
         private void Buzzer_OnRegister(int buzzerNumber)
@@ -207,6 +213,9 @@ namespace Quiz_o_matic_9000
 
                 Content = mainPageContent;
 
+                Server.Stop();
+                var buzzerHandlers = SetBuzzerHandlers();
+                Server.Start(buzzerHandlers.Item1, buzzerHandlers.Item2, buzzerHandlers.Item3);
                 // TODO: restore previous team colours
             }
         }

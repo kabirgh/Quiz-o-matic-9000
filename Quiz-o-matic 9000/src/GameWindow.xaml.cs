@@ -81,7 +81,7 @@ namespace Quiz_o_matic_9000
 
         private void FreezeMiceAndMakeGrid(object sender, RoutedEventArgs e)
         {
-            var btnPos = mpButton.PointToScreen(new Point(0, 0));
+            var btnPos = mpButton.PointToScreen(new Point(1, 1));
             int numMice = MultipointSdk.Instance.MouseDeviceList.Count;
 
             foreach (var deviceInfo in MultipointSdk.Instance.MouseDeviceList)
@@ -118,6 +118,13 @@ namespace Quiz_o_matic_9000
         // Only this function and Reset should mutate rowPosition
         private void DisplayTeam(int teamId)
         {
+            // On backspace, the handler is not removed. Buzzers that register after backspace still trigger handler 
+            // but are not present in teams dict, leading to an exception
+            if (!teams.ContainsKey(teamId))
+            {
+                return;
+            }
+
             TeamData teamData = teams[teamId];
 
             var border = GridUtil.GetUiElement<Border>(grid, rowPosition, 1);
