@@ -72,7 +72,7 @@ namespace Quiz_o_matic_9000
             startButton.Loaded += StartButton_Loaded;
             startButton.MultipointClick += StartButton_Click;
 
-            var buzzerHandlers = SetBuzzerHandlers();
+            var buzzerHandlers = GetBuzzerHandlers();
             // Create websocket server in background thread. Background worker syncs with ui thread via handlers passed into method
             Server.Start(buzzerHandlers.Item1, buzzerHandlers.Item2, buzzerHandlers.Item3);
         }
@@ -83,7 +83,7 @@ namespace Quiz_o_matic_9000
             MultipointSdk.Instance.Dispose();
         }
 
-        private Tuple<IProgress<int>, IProgress<int>, IProgress<string>> SetBuzzerHandlers()
+        private Tuple<IProgress<int>, IProgress<int>, IProgress<string>> GetBuzzerHandlers()
         {
             var onRegister = new Progress<int>(buzzerId =>
             {
@@ -213,9 +213,10 @@ namespace Quiz_o_matic_9000
 
                 Content = mainPageContent;
 
-                Server.Stop();
-                var buzzerHandlers = SetBuzzerHandlers();
-                Server.Start(buzzerHandlers.Item1, buzzerHandlers.Item2, buzzerHandlers.Item3);
+                var buzzerHandlers = GetBuzzerHandlers();
+                Server.Buzzer_OnRegister = buzzerHandlers.Item1;
+                Server.Buzzer_OnClick = buzzerHandlers.Item2;
+                Server.Buzzer_OnError = buzzerHandlers.Item3;
                 // TODO: restore previous team colours
             }
         }
