@@ -22,12 +22,14 @@ namespace Quiz_o_matic_9000
 
         private const int FIRST_DATA_ROW = 5;
         private const int START_BTN_ROW = 20;
+        private const int MASTER_REGISTER_BTN_ROW = 3;
 
         private const int START_BTN_COL = 9;
         private const int DEL_BTN_COL = 1;
         private const int TEXTBOX_COL = 3;
         private const int COLOUR_SELECT_COL = 5;
         private const int REGISTER_BTN_COL = 7;
+        private const int MASTER_REGISTER_BTN_COL = 9;
 
         private const int MAX_LAST_ACTIVE_ROW_POS = 23;
         private int lastActiveRowPosition = 5;
@@ -57,8 +59,8 @@ namespace Quiz_o_matic_9000
             KeyDown += KeyDown_Event_Main;
             Closing += MainWindow_Closing;
 
+            masterRegisterButton.MultipointClick += MasterRegisterButton_Click;
             addButton.MultipointClick += AddButton_Click;
-
             deleteButton1.MultipointClick += DeleteButton_Click;
 
             textBox1.Loaded += TextBox_Loaded;
@@ -83,6 +85,7 @@ namespace Quiz_o_matic_9000
             MultipointSdk.Instance.Dispose();
         }
 
+        #region Buzzer handling
         private Tuple<IProgress<int>, IProgress<int>, IProgress<string>> GetBuzzerHandlers()
         {
             var onRegister = new Progress<int>(buzzerId =>
@@ -123,6 +126,7 @@ namespace Quiz_o_matic_9000
             deviceIds[rowId] = buzzerNumber;
             AddRow(RegisterButtonType.Confirm);
         }
+        #endregion
 
         #region UI element loaded handlers
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -205,6 +209,7 @@ namespace Quiz_o_matic_9000
             }
             else if (e.Key == Key.Back)
             {
+                // Hack to simulate new MainWindow() with old content
                 foreach (var deviceInfo in MultipointSdk.Instance.MouseDeviceList)
                 {
                     deviceInfo.DeviceVisual.DisableMovement = false;
@@ -217,7 +222,6 @@ namespace Quiz_o_matic_9000
                 Server.Buzzer_OnRegister = buzzerHandlers.Item1;
                 Server.Buzzer_OnClick = buzzerHandlers.Item2;
                 Server.Buzzer_OnError = buzzerHandlers.Item3;
-                // TODO: restore previous team colours
             }
         }
         #endregion
@@ -452,6 +456,12 @@ namespace Quiz_o_matic_9000
             // Remember team entries
             mainPageContent = Content;
             Content = gameWindow.Content;
+        }
+
+        private void MasterRegisterButton_Click(object sender, RoutedEventArgs e)
+        {
+            DataStore.masterMouseID = ((MultipointMouseEventArgs)e).DeviceInfo.Id;
+            GridUtil.RemoveUiElement<MultipointButton>(mainWindowGrid, MASTER_REGISTER_BTN_ROW, MASTER_REGISTER_BTN_COL);
         }
         #endregion
 

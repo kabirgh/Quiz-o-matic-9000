@@ -40,5 +40,7 @@ namespace Quiz_o_matic_9000.src
             [9] = new TeamData("Alpaca", LightGreen)
 
         };
+
+        public static int masterMouseID = -1;  // A right click on this mouse resets the game window. Allows reset away from keyboard
     }
 }

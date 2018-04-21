@@ -26,6 +26,7 @@ namespace Quiz_o_matic_9000
             mpButton.Loaded += FreezeMiceAndMakeGrid;
             // All cursors are fixed to hover over mpButton. Handler determines which device clicked it
             mpButton.MultipointClick += MpButton_Click;
+            mpButton.MultipointMouseRightButtonDownEvent += MpButton_RightButtonDown;
 
             string lines = "";
             foreach (KeyValuePair<int, TeamData> kvp in teams)
@@ -96,12 +97,11 @@ namespace Quiz_o_matic_9000
             MakeGrid(teams.Count);
         }
 
-        // Click handler
+        #region Click handlers
         private void MpButton_Click(object sender, RoutedEventArgs e)
         {
             MultipointMouseEventArgs multipointargs = e as MultipointMouseEventArgs;
-            int deviceId = multipointargs.DeviceInfo.Id;
-            RecordClick(deviceId);
+            RecordClick(multipointargs.DeviceInfo.Id);
         }
 
         private void RecordClick(int deviceId)
@@ -113,6 +113,16 @@ namespace Quiz_o_matic_9000
             }
         }
 
+        private void MpButton_RightButtonDown(object sender, RoutedEventArgs e)
+        {
+            MultipointMouseEventArgs multipointargs = e as MultipointMouseEventArgs;
+            // If master mouse right-clicks, reset
+            if (multipointargs.DeviceInfo.Id == DataStore.masterMouseID)
+            {
+                Reset();
+            }
+        }
+        #endregion
 
         // Displays team on the next row
         // Only this function and Reset should mutate rowPosition
