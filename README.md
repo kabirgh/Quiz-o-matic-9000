@@ -16,8 +16,12 @@ This is the window that shows up when you start the application.
 On the main screen, you can:
 - Add, name, colour and remove teams
 - Assign mice to teams
-- Register custom wireless buzzers that communicate over websockets. See [this project](https://hackaday.io/project/152687-quiz-o-matic-wireless-buzzers) for details
+- Register custom wireless buzzers that communicate over websockets
 - Set a master mouse. During the game, a right click on only this mouse will reset the game screen. This feature was added so that the quizmaster can refresh the screen from the keyboard
+
+#### Buzzers
+To register the buzzers described [here](https://hackaday.io/project/152687-quiz-o-matic-wireless-buzzers), press and hold the button until a new row shows up on the game screen. This should take about 2 seconds. After writing a team name and selecting a colour, press the `Confirm` button to lock that team's name and colour.
+
 
 When you're done, click the `Start` button to go to the game screen.
 
@@ -25,7 +29,7 @@ When you're done, click the `Start` button to go to the game screen.
 
 ![](https://zippy.gfycat.com/LegalDeliciousBustard.gif)
 
-The first team to click their mouse will show up on a rectangle with their name and colour at the top of the screen. Teams that buzz afterwards will be shown below, in order of their . Further clicks from the same device will have no effect until the screen is reset.
+The first team to click their mouse will show up on a rectangle with their name and colour at the top of the screen. Teams that buzz afterwards will be shown below, fastest nearer the top. In the gif above, 'You're a quizzard, Harry' buzzed first. Further clicks from the same device will have no effect until the screen is reset.
 To reset all teams from the screen, press `R` on your keyboard, or right-click on the master mouse.
 Since the Multipoint library Microsoft provides does not support clicking on the window close button (yep, seriosuly), press `Esc` to quit the program. All keys used in the application are tabled below.
 
