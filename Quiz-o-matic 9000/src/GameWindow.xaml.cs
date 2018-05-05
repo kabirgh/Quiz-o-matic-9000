@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.Multipoint.Sdk;
+using System;
 
 namespace Quiz_o_matic_9000
 {
@@ -25,11 +26,24 @@ namespace Quiz_o_matic_9000
             mpButton.Loaded += FreezeMiceAndMakeGrid;
             // All cursors are fixed to hover over mpButton. Handler determines which device clicked it
             mpButton.MultipointClick += MpButton_Click;
+            mpButton.MultipointMouseRightButtonDownEvent += MpButton_RightButtonDown;
+
+            // Set new handlers
+            Server.Buzzer_OnRegister = new Progress<int>(buzzerId =>
+            {
+                // Ignore re-registration
+            }) as IProgress<int>;
+
+            Server.Buzzer_OnClick = new Progress<int>(buzzerId =>
+            {
+                RecordClick(buzzerId);
+            }) as IProgress<int>;
 
             // KeyDown event configured in MainWindow.xaml.cs
         }
 
 
+        #region Keydown event handlers
         // Remove all teams from screen
         public void Reset()
         {
@@ -54,20 +68,20 @@ namespace Quiz_o_matic_9000
             {
                 var teamId = entry.Key;
 
-                displayTeam(teamId);
+                DisplayTeam(teamId);
                 pressed.Add(teamId);
             }
         }
-
+        #endregion
 
         private void FreezeMiceAndMakeGrid(object sender, RoutedEventArgs e)
         {
-            var btnPos = mpButton.PointToScreen(new Point(0, 0));
+            var btnPos = mpButton.PointToScreen(new Point(1, 1));
             int numMice = MultipointSdk.Instance.MouseDeviceList.Count;
 
             foreach (var deviceInfo in MultipointSdk.Instance.MouseDeviceList)
             {
-                deviceInfo.DeviceVisual.CursorBitmap = new System.Drawing.Bitmap(CursorStore.PathToBlankCursor);
+                deviceInfo.DeviceVisual.CursorBitmap = CursorStore.BlankCursor;
 
                 deviceInfo.DeviceVisual.SetPosition((int)btnPos.X, (int)btnPos.Y);
                 deviceInfo.DeviceVisual.DisableMovement = true;
@@ -77,29 +91,45 @@ namespace Quiz_o_matic_9000
             MakeGrid(teams.Count);
         }
 
-
+        #region Click handlers
         private void MpButton_Click(object sender, RoutedEventArgs e)
         {
             MultipointMouseEventArgs multipointargs = e as MultipointMouseEventArgs;
+            RecordClick(multipointargs.DeviceInfo.Id);
+        }
 
-            if (e == null)
-            {
-                throw new System.Exception("Mouse button click handler received an invalid event argument.");
-            }
-
-            int deviceId = multipointargs.DeviceInfo.Id;
+        private void RecordClick(int deviceId)
+        {
             if (!pressed.Contains(deviceId))
             {
-                displayTeam(deviceId);
+                DisplayTeam(deviceId);
                 pressed.Add(deviceId);
             }
         }
 
+        private void MpButton_RightButtonDown(object sender, RoutedEventArgs e)
+        {
+            MultipointMouseEventArgs multipointargs = e as MultipointMouseEventArgs;
+            // If master mouse right-clicks, reset
+            if (multipointargs.DeviceInfo.Id == DataStore.masterMouseID)
+            {
+                Reset();
+            }
+        }
+        #endregion
 
         // Displays team on the next row
         // Only this function and Reset should mutate rowPosition
-        private void displayTeam(int teamId)
+        private void DisplayTeam(int teamId)
         {
+            // On backspace, teams dict is reset butthe handler is not removed. Buzzers that register after 
+            // backspace still trigger handler  but are not present in teams dict, leading to an exception. 
+            // Ignore click if not present in teams dict
+            if (!teams.ContainsKey(teamId))
+            {
+                return;
+            }
+
             TeamData teamData = teams[teamId];
 
             var border = GridUtil.GetUiElement<Border>(grid, rowPosition, 1);

@@ -1,18 +1,18 @@
 ﻿using System;
+using System.Drawing;
 using System.IO;
 
 namespace Quiz_o_matic_9000.src
 {
     class CursorStore
     {
-        public static readonly string PathToBlankCursor;
-        public static readonly string PathToDefaultCursor;
+        public static readonly Bitmap BlankCursor;
+        public static readonly Bitmap DefaultCursor;
 
         static CursorStore()
         {
-            string currentDirectory = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
-            PathToBlankCursor = Path.GetFullPath(Path.Combine(currentDirectory, @"..\..\img\blank_cursor.jpg"));
-            PathToDefaultCursor = Path.GetFullPath(Path.Combine(currentDirectory, @"..\..\img\default_cursor.png"));
+            BlankCursor = new Bitmap(Properties.Resources.blank_cursor);
+            DefaultCursor = new Bitmap(Properties.Resources.default_cursor);
         }
     }
 }

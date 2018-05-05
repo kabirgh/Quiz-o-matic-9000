@@ -83,6 +83,8 @@
             <Path Fill="Green" Width="30" Height="30" Stretch="Fill" Data="{StaticResource addIconGeometry}" />
         </mp:MultipointButton>
 
+        <mp:MultipointButton Name="masterRegisterButton" Grid.Row="3" Grid.Column="9">Register master</mp:MultipointButton>
+
         <mp:MultipointButton Name="deleteButton1" Grid.Row="5" Grid.Column="1">
             <Path Fill="Red" Width="25" Height="25" Stretch="Fill" Data="{StaticResource deleteIconGeometry}" />
         </mp:MultipointButton>
