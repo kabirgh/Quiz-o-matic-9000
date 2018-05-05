@@ -28,12 +28,6 @@ namespace Quiz_o_matic_9000
             mpButton.MultipointClick += MpButton_Click;
             mpButton.MultipointMouseRightButtonDownEvent += MpButton_RightButtonDown;
 
-            string lines = "";
-            foreach (KeyValuePair<int, TeamData> kvp in teams)
-            {
-                lines += string.Format("Team #{0}, {1}", kvp.Key, kvp.Value.ToString());
-            }
-
             // Set new handlers
             Server.Buzzer_OnRegister = new Progress<int>(buzzerId =>
             {
@@ -128,8 +122,9 @@ namespace Quiz_o_matic_9000
         // Only this function and Reset should mutate rowPosition
         private void DisplayTeam(int teamId)
         {
-            // On backspace, the handler is not removed. Buzzers that register after backspace still trigger handler 
-            // but are not present in teams dict, leading to an exception
+            // On backspace, teams dict is reset butthe handler is not removed. Buzzers that register after 
+            // backspace still trigger handler  but are not present in teams dict, leading to an exception. 
+            // Ignore click if not present in teams dict
             if (!teams.ContainsKey(teamId))
             {
                 return;

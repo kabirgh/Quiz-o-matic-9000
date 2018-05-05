@@ -402,7 +402,15 @@ namespace Quiz_o_matic_9000
             }
             else
             {
-                SaveTeam(deviceId, btnRow, rowId);
+                var didSave = SaveTeam(deviceId, btnRow, rowId);
+                if (didSave)
+                {
+                    // Remove confirm button so user doesn't think device registration can be overriden
+                    GridUtil.RemoveUiElement<MultipointButton>(mainWindowGrid, btnRow, REGISTER_BTN_COL);
+                    // Lock team colour
+                    var colourSelect = GridUtil.GetUiElement<MultipointButton>(mainWindowGrid, btnRow, COLOUR_SELECT_COL);
+                    colourSelect.MultipointClick -= ColourSelect_Click;
+                }
             }
         }
 
