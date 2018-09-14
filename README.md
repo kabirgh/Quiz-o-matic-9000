@@ -1,5 +1,5 @@
 # Quiz-o-matic 9000
-Quiz-o-matic is a Windows application that lets you use mice connected to the computer as buzzers. Upto 10 teams can click registered mice to show up on the screen, in order. As of version 1.1, the application also supports [DIY buzzers](https://hackaday.io/project/152687-quiz-o-matic-wireless-buzzers).
+Quiz-o-matic is a Windows application that lets you use mice connected to the computer as buzzers. Upto 10 teams can click registered mice to show up on the screen, in order. As of version 1.1, the application also supports [DIY buzzers](https://hackaday.io/project/158010-quiz-o-matic-wireless-buzzers).
 
 ## Installation
 Quiz-o-matic is a portable application that does not require a setup. The only prerequisite is a Windows operating system with a .NET runtime > 4.5.2 (sorry Mac/Linux folks, it needs a Windows-only library to distinguish multiple mice). To run the program,
@@ -20,7 +20,7 @@ On the main screen, you can:
 - Set a master mouse. During the game, a right click on only this mouse will reset the game screen. This feature was added so that the quizmaster can refresh the screen from the keyboard
 
 #### Buzzers
-To register the buzzers described [here](https://hackaday.io/project/152687-quiz-o-matic-wireless-buzzers), press and hold the button until a new row shows up on the game screen. This should take about 2 seconds. After writing a team name and selecting a colour, press the `Confirm` button to lock that team's name and colour.
+To register the buzzers described [here](https://hackaday.io/project/158010-quiz-o-matic-wireless-buzzers), press and hold the button until a new row shows up on the game screen. This should take about 2 seconds. After writing a team name and selecting a colour, press the `Confirm` button to lock that team's name and colour.
 
 
 When you're done, click the `Start` button to go to the game screen.
