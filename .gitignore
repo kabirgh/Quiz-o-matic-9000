@@ -1,3 +1,3 @@
 build/bin
-frontend/dist
+frontend/out
 frontend/node_modules
