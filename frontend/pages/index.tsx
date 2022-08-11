@@ -1,67 +1,57 @@
-import type { NextPage } from 'next'
-import Head from 'next/head'
-import { useState } from 'react'
-import styles from './index.module.css'
-import { Greet } from '../wailsjs/wailsjs/go/main/App'
+import type { NextPage } from "next";
 
-const Home: NextPage = () => {
-  const [name, setName] = useState('')
-  const [result, setResult] = useState('Please enter your name below 👇')
+import { useEffect } from "react";
+import Link from "next/link";
+import { useStore } from "../lib/store";
+import styles from "./index.module.css";
+import { Greet } from "../wailsjs/wailsjs/go/main/App";
+
+const Main: NextPage = () => {
+  const { store, setStore } = useStore();
 
   return (
-    <div className={styles['app-container']}>
-      <Head>
-        <title>Wails + Next.js</title>
-      </Head>
-      <div className={styles['app']}>
-        <div className={styles['logo-container']}>
-          <img
-            className={styles['logo']}
-            src='/images/logo-universal.png'
-            title='Wails'
-          />
-          <div className={styles['plus']}>+</div>
-          <img
-            className={styles['logo']}
-            src='images/nextjs-logo.svg'
-            title='Next.js'
-          />
-        </div>
-        <div className={styles['result']}>
-          {result}
-        </div>
-        <div className={styles['input-box-container']}>
-          <input
-            className={styles['input-box-input']}
-            type="text"
-            autoComplete="off"
-            value={name}
-            onChange={e => setName(e.target.value)}
-          />
-          <button
-            className={styles['input-box-btn']}
-            onClick={() => {
-              if (name === '') {
-                return
-              }
-              try {
-                Greet(name)
-                  .then(result => {
-                    setResult(result)
-                  })
-                  .catch(err => {
-                    console.error(err)
-                  })
-              } catch (err) {
-                console.error(err)
-              }
-            }}>
-            Greet
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
+    <div className={styles.app}>
+      <div className={styles.mainTitle}>Quiz-o-matic</div>
+      <button id="add-btn" style={{ gridArea: "4/2/5/3" }}>
+        Add
+      </button>
+      {store.teams.map((team, index) => {
+        const i = index + 1;
+        return (
+          <>
+            <button
+              id={`team-${i + 1}-del-btn`}
+              style={{ gridArea: `${2 * i + 4}/2/${2 * i + 5}/3` }}
+            >
+              Del
+            </button>
+            <input
+              id={`team-${i + 1}-input`}
+              style={{ gridArea: `${2 * i + 4}/4/${2 * i + 5}/5` }}
+              value={team.name}
+              onChange={(event) => {
+                const teams = [...store.teams];
+                teams[index].name = event.target.value;
+                setStore({ ...store, teams: teams });
+              }}
+            />
+            <button
+              id={`team-${i + 1}-register-btn`}
+              style={{ gridArea: `${2 * i + 4}/6/${2 * i + 5}/7` }}
+            >
+              Register
+            </button>
+          </>
+        );
+      })}
 
-export default Home
+      <Link href="/game">
+        <button id="start-btn" style={{ gridArea: "22/10/23/11" }}>
+          Start
+        </button>
+      </Link>
+    </div>
+  );
+};
+
+export default Main;
