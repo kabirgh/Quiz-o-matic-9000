@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -17,8 +19,9 @@ func NewApp() *App {
 
 // startup is called at application startup
 func (a *App) startup(ctx context.Context) {
-	// Perform your setup here
 	a.ctx = ctx
+	// During development, so inspector window fits on the side
+	runtime.WindowSetPosition(ctx, 0, 0)
 }
 
 // domReady is called after front-end resources have been loaded
