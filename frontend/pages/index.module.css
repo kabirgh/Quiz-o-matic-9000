@@ -4,19 +4,24 @@
   background-image: url("/images/bg.png");
   background-size: cover;
   display: grid;
+  /* xfr == minmax(auto, xfr), which allows content to change row size. Prevent this*/
   grid-template-rows:
-    5fr
-    [title-row-start] 10fr [title-row-end] 8fr /* Title */
-    [add-row-start] 5fr [add-row-end] 2fr /* Add button */
-    repeat(10, 5fr 2fr); /* Space for 10 teams */
+    minmax(0, 5fr)
+    [title-row-start] minmax(0, 10fr) [title-row-end] minmax(0, 8fr) /* Title */
+    [add-row-start] minmax(0, 5fr) [add-row-end] minmax(0, 2fr) /* Add button */
+    repeat(
+      10,
+      minmax(0, 5fr) minmax(0, 2fr)
+    ); /* Space for 8 teams + start button + spacer */
   grid-template-columns:
     6fr
     3fr 2fr /* Delete/Add */
-    18fr 2fr /* Team name */
-    5fr 2fr /* Colour select */
+    22fr 2fr /* Team name */
+    20fr 2fr /* Colour select */
     12fr /* Mouse registration */
-    28fr /* Empty space */
-    14fr 6fr; /* Start button */
+    11fr /* Empty space */
+    14fr /* Start button */
+    6fr;
 }
 
 .mainTitle {
