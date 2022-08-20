@@ -1,11 +1,14 @@
-module changeme
+module quizomatic
 
 go 1.17
 
 require github.com/wailsapp/wails/v2 v2.0.0-beta.43
 
+require go.bug.st/serial v1.3.5
+
 require (
 	github.com/bep/debounce v1.2.1 // indirect
+	github.com/creack/goselect v0.1.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect

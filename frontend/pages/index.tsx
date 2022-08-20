@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 
@@ -8,7 +8,7 @@ import colors from "../lib/colors";
 import ColorPicker from "../components/ColorPicker";
 import styles from "./index.module.css";
 
-import { Greet } from "../wailsjs/wailsjs/go/main/App";
+import { ListPorts, SetPort } from "../wailsjs/wailsjs/go/main/App";
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 
 const Main: NextPage = () => {
@@ -19,6 +19,19 @@ const Main: NextPage = () => {
   const [inputValid, setInputValid] = useState(
     {} as { [key: number]: boolean }
   );
+  const [portOptions, setPortOptions] = useState([] as string[]);
+  const [selectedPort, setSelectedPort] = useState(
+    undefined as string | undefined
+  );
+
+  useEffect(() => {
+    ListPorts()
+      .then((ports) => {
+        setPortOptions(ports);
+        setSelectedPort(ports[0]);
+      })
+      .catch((err) => console.error(err));
+  }, []);
 
   const getNextUnusedColor = () => {
     const color = Object.values(colors).filter(
@@ -32,7 +45,7 @@ const Main: NextPage = () => {
       <div className={styles.mainTitle}>Quiz-o-matic</div>
       <button
         id="add-btn"
-        style={{ gridArea: "4/2/5/3", height: "100%", width: "100%" }}
+        style={{ gridArea: "4/2/5/3" }}
         onClick={() => {
           if (teams.length < MAX_TEAMS) {
             setTeams([...teams, { name: "", color: getNextUnusedColor() }]);
@@ -41,6 +54,26 @@ const Main: NextPage = () => {
       >
         <PlusOutlined style={{ fontSize: "18px", color: "green" }} />
       </button>
+      <select
+        style={{
+          gridArea: "2/10/3/11",
+          height: "40%",
+          marginTop: "auto", // centers element vertically
+          marginBottom: "auto",
+        }}
+        value={selectedPort}
+        onChange={(event) => {
+          setSelectedPort(event.target.value);
+          console.log("setting port to ", event.target.value);
+          SetPort(event.target.value);
+        }}
+      >
+        {portOptions.map((port) => (
+          <option key={port} value={port}>
+            {port}
+          </option>
+        ))}
+      </select>
       {teams.map((team, index) => {
         const i = index + 1;
         return (
