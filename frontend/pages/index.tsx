@@ -34,6 +34,11 @@ const Main: NextPage = () => {
     undefined as string | undefined
   );
 
+  const [buzzerOptions, setBuzzerOptions] = useState([
+    "Waiting...",
+  ] as string[]);
+
+  // Set ports list and select the first one
   useEffect(() => {
     ListPorts()
       .then((ports) => {
@@ -41,6 +46,21 @@ const Main: NextPage = () => {
         setSelectedPort(ports[0]);
       })
       .catch((err) => console.error(err));
+  }, []);
+
+  // Listen for buzzers
+  useEffect(() => {
+    const cancel = EventsOn("newBuzzer", (id: string) => {
+      setBuzzerOptions((prev) => {
+        if (prev.includes(id)) {
+          return prev;
+        }
+        // Remove "Waiting..." once a buzzer is connected
+        return [...prev, id].filter((id) => id !== "Waiting...");
+      });
+    });
+
+    return cancel;
   }, []);
 
   // Adjust the ref array to match the number of teams
@@ -168,14 +188,18 @@ const Main: NextPage = () => {
                 }}
               />
             </div>
-            <button
-              id={`team-${i}-register-btn`}
+            <select
+              id={`team-${i}-select`}
               style={{
                 gridArea: `${2 * i + 4}/8/${2 * i + 5}/9`,
               }}
             >
-              Register
-            </button>
+              {buzzerOptions.map((buzzerId) => (
+                <option key={buzzerId} value={buzzerId}>
+                  {buzzerId}
+                </option>
+              ))}
+            </select>
           </Fragment>
         );
       })}
