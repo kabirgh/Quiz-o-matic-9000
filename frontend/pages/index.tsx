@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Fragment } from "react";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 
@@ -77,7 +77,7 @@ const Main: NextPage = () => {
       {teams.map((team, index) => {
         const i = index + 1;
         return (
-          <>
+          <Fragment key={i}>
             <button
               id={`team-${i}-del-btn`}
               style={{
@@ -155,7 +155,7 @@ const Main: NextPage = () => {
             >
               Register
             </button>
-          </>
+          </Fragment>
         );
       })}
 
