@@ -41,6 +41,9 @@ func main() {
 		Bind: []interface{}{
 			app,
 		},
+		EnumBind: []interface{}{
+			Colors,
+		},
 	})
 
 	if err != nil {

@@ -21,14 +21,47 @@ type App struct {
 }
 
 type Team struct {
-	Name   string  `json:"name"`
-	Color  string  `json:"color"`
-	Buzzer *string `json:"buzzer"` // nilable
+	Name     string  `json:"name"`
+	Color    Color   `json:"color"`
+	BuzzerId *string `json:"buzzerId"` // nilable
+}
+
+// Export Color enum to frontend
+// https://wails.io/docs/howdoesitwork/#method-binding
+type Color string
+
+const (
+	ColorRed        Color = "#E8293C"
+	ColorBlue       Color = "#5596E6"
+	ColorGreen      Color = "#00B4A0"
+	ColorYellow     Color = "#FDD600"
+	ColorPurple     Color = "#AF6EE8"
+	ColorLightBrown Color = "#D2B0A4"
+	ColorMidBlue    Color = "#305A80"
+	ColorOrange     Color = "#FF9249"
+)
+
+var Colors = []struct {
+	Value  Color
+	TSName string
+}{
+	{ColorRed, "Red"},
+	{ColorBlue, "Blue"},
+	{ColorGreen, "Green"},
+	{ColorYellow, "Yellow"},
+	{ColorPurple, "Purple"},
+	{ColorLightBrown, "LightBrown"},
+	{ColorMidBlue, "MidBlue"},
+	{ColorOrange, "Orange"},
 }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+	return &App{
+		teams: []Team{
+			{Name: "", Color: ColorRed, BuzzerId: nil},
+		},
+	}
 }
 
 // startup is called at application startup
