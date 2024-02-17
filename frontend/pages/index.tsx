@@ -14,12 +14,16 @@ import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 const Main: NextPage = () => {
   const MAX_TEAMS = 8;
   const router = useRouter();
+
   const { teams, setTeams } = useStore();
+
+  const inputRefs = useRef([] as (HTMLInputElement | null)[]);
   const inputRowRef = useRef<HTMLElement>(null);
   const rect = useClientRect(inputRowRef);
   const [inputValid, setInputValid] = useState(
     {} as { [key: number]: boolean }
   );
+
   const [portOptions, setPortOptions] = useState([] as string[]);
   const [selectedPort, setSelectedPort] = useState(
     undefined as string | undefined
@@ -33,6 +37,17 @@ const Main: NextPage = () => {
       })
       .catch((err) => console.error(err));
   }, []);
+
+  // Adjust the ref array to match the number of teams
+  useEffect(() => {
+    inputRefs.current = inputRefs.current.slice(0, teams.length);
+    if (teams.length > 0) {
+      const lastInputIndex = teams.length - 1;
+      if (inputRefs.current[lastInputIndex]) {
+        inputRefs.current[lastInputIndex]?.focus();
+      }
+    }
+  }, [teams]);
 
   const getNextUnusedColor = () => {
     const color = Object.values(colors).filter(
@@ -100,6 +115,7 @@ const Main: NextPage = () => {
             </button>
             <input
               id={`team-${i}-input`}
+              ref={(el) => (inputRefs.current[index] = el)}
               autoComplete="off"
               style={{
                 gridArea: `${2 * i + 4}/4/${2 * i + 5}/5`,
