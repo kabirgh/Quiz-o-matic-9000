@@ -15,7 +15,8 @@ const Main: NextPage = () => {
   const MAX_TEAMS = 8;
   const router = useRouter();
   const { teams, setTeams } = useStore();
-  const [rect, inputRowRef] = useClientRect();
+  const inputRowRef = useRef<HTMLElement>(null);
+  const rect = useClientRect(inputRowRef);
   const [inputValid, setInputValid] = useState(
     {} as { [key: number]: boolean }
   );
@@ -134,11 +135,7 @@ const Main: NextPage = () => {
               <ColorPicker
                 colors={Object.values(colors)}
                 disabled={teams.map((t) => t.color)}
-                size={
-                  rect === null || typeof rect !== "object"
-                    ? 0
-                    : 0.95 * rect.height
-                }
+                size={rect === null ? 0 : 0.95 * rect.height}
                 selected={team.color}
                 handleSelect={(color: string) => {
                   const newTeams = [...teams];

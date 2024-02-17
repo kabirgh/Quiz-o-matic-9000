@@ -1,19 +1,18 @@
 import type { NextPage } from "next";
-
-import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+
+import { useEffect, useRef, useState } from "react";
 
 import type { Team } from "../lib/store";
 import { useStore } from "../lib/store";
 import useClientRect from "../lib/useClientRect";
 
-// import styles from './game.module.css'
-
 const Game: NextPage = () => {
   const router = useRouter();
   const { teams } = useStore();
   const [played, setPlayed] = useState([] as Team[]);
-  const [rect, teamRowRef] = useClientRect();
+  const teamRowRef = useRef<HTMLElement>(null);
+  const rect = useClientRect(teamRowRef);
 
   useEffect(() => {
     const keydownHandler = (event: any) => {
@@ -58,11 +57,12 @@ const Game: NextPage = () => {
       {played.map((team, index) => {
         const i = index + 1;
         const id = `row-${i}`;
+
         return (
           <div
             id={id}
             key={id}
-            ref={teamRowRef as any}
+            className="team-row"
             style={{
               gridArea: `${2 * i} / 2 / ${2 * i + 1} / 3`,
               backgroundColor: `${team.color}`,
@@ -70,16 +70,19 @@ const Game: NextPage = () => {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              fontSize:
-                rect === null || typeof rect !== "object"
-                  ? 0
-                  : 0.25 * rect.height,
+              fontSize: rect === null ? 0 : 0.25 * rect.height,
             }}
           >
             {team.name}
           </div>
         );
       })}
+
+      <div
+        id="div-only-for-ref"
+        ref={teamRowRef as any}
+        style={{ gridArea: `2/3/3/4`, height: "100%" }}
+      ></div>
     </div>
   );
 };
