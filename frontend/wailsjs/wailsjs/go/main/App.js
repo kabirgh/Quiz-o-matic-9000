@@ -6,6 +6,14 @@ export function ListPorts() {
   return window['go']['main']['App']['ListPorts']();
 }
 
+export function ListTeams() {
+  return window['go']['main']['App']['ListTeams']();
+}
+
+export function SaveTeams(arg1) {
+  return window['go']['main']['App']['SaveTeams'](arg1);
+}
+
 export function SetPort(arg1) {
   return window['go']['main']['App']['SetPort'](arg1);
 }

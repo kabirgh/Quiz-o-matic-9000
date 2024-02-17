@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, Fragment } from "react";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
+import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 
 import { useStore } from "../lib/store";
 import useClientRect from "../lib/useClientRect";
@@ -8,8 +9,12 @@ import colors from "../lib/colors";
 import ColorPicker from "../components/ColorPicker";
 import styles from "./index.module.css";
 
-import { ListPorts, SetPort } from "../wailsjs/wailsjs/go/main/App";
-import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  ListPorts,
+  SetPort,
+  SaveTeams,
+  ListTeams,
+} from "../wailsjs/wailsjs/go/main/App";
 
 const Main: NextPage = () => {
   const MAX_TEAMS = 8;
@@ -64,7 +69,10 @@ const Main: NextPage = () => {
         style={{ gridArea: "4/2/5/3" }}
         onClick={() => {
           if (teams.length < MAX_TEAMS) {
-            setTeams([...teams, { name: "", color: getNextUnusedColor() }]);
+            setTeams([
+              ...teams,
+              { name: "", color: getNextUnusedColor(), buzzer: undefined },
+            ]);
           }
         }}
       >
@@ -128,7 +136,7 @@ const Main: NextPage = () => {
                 newTeams[index].name = event.target.value;
                 setTeams(newTeams);
               }}
-              onFocus={(event) => {
+              onFocus={(_event) => {
                 const newValid = { ...inputValid };
                 newValid[index] = true;
                 setInputValid(newValid);
@@ -182,15 +190,22 @@ const Main: NextPage = () => {
         id="start-btn"
         style={{ gridArea: "22/10/23/11" }}
         onClick={() => {
-          const validities = teams.map((t, index) => {
+          const validities = teams.map((t) => {
             return t !== null && t.name.trim() === "" ? false : true;
           });
 
-          if (validities.every((v) => v === true)) {
-            router.push("/game");
-          } else {
+          if (!validities.every((v) => v === true)) {
             setInputValid(Object.assign({}, validities));
+            return;
           }
+
+          console.log(
+            "========================================= Saving teams front",
+            teams
+          );
+          SaveTeams(teams);
+
+          router.push("/game");
         }}
       >
         Start

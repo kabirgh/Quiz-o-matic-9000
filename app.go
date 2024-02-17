@@ -16,6 +16,14 @@ type App struct {
 	activePort   serial.Port
 	serialCtx    context.Context
 	cancelSerial context.CancelFunc
+	teams        []Team
+	// buzzers []string
+}
+
+type Team struct {
+	Name   string  `json:"name"`
+	Color  string  `json:"color"`
+	Buzzer *string `json:"buzzer"` // nilable
 }
 
 // NewApp creates a new App application struct
@@ -75,6 +83,18 @@ func (a *App) SetPort(portName string) {
 	// Create new context for future cancellation
 	a.serialCtx, a.cancelSerial = context.WithCancel(context.Background())
 	go a.readSerial(a.serialCtx, portName)
+}
+
+// Frontend calls this to save teams
+func (a *App) SaveTeams(teams []Team) {
+	fmt.Println("----------------------------------------------------")
+	fmt.Println("Saving teams", teams)
+	a.teams = teams
+}
+
+// Get the list of teams
+func (a *App) ListTeams() []Team {
+	return a.teams
 }
 
 const (
