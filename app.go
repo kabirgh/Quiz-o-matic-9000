@@ -35,6 +35,7 @@ func (a *App) startup(ctx context.Context) {
 func (a *App) domReady(ctx context.Context) {
 	ports, err := a.ListPorts()
 	if err == nil {
+		// Start reading from first port in list
 		// Not SetPort since that would close goroutine as soon as it starts
 		go a.readSerial(a.serialCtx, ports[0])
 	}
@@ -71,7 +72,6 @@ func (a *App) SetPort(portName string) {
 	// Close previous serial connection. Guaranteed to exist since we call
 	// readSerial in startup.
 	a.cancelSerial()
-	a.activePort.Close()
 	// Create new context for future cancellation
 	a.serialCtx, a.cancelSerial = context.WithCancel(context.Background())
 	go a.readSerial(a.serialCtx, portName)
@@ -107,8 +107,11 @@ func (a *App) readSerial(sCtx context.Context, portName string) {
 		if err != nil {
 			select {
 			case <-sCtx.Done():
-				return // ctx was cancelled, just return without error
+				// ctx was cancelled, close the port and return without error
+				a.activePort.Close()
+				return
 			default:
+				a.activePort.Close()
 				runtime.LogErrorf(a.ctx, "--- read error: %s", err)
 				return
 			}
