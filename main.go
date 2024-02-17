@@ -32,7 +32,7 @@ func main() {
 		Assets:            assets,
 		Menu:              nil,
 		Logger:            nil,
-		LogLevel:          logger.DEBUG,
+		LogLevel:          logger.INFO,
 		OnStartup:         app.startup,
 		OnDomReady:        app.domReady,
 		OnBeforeClose:     app.beforeClose,

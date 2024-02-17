@@ -10,7 +10,7 @@
   "frontend:dev:serverUrl": "http://localhost:3000",
   "wailsjsdir": "frontend/wailsjs",
   "author": {
-    "name": "Kabir Khandpur",
+    "name": "Kabir",
     "email": "kabirk@live.com"
   }
 }

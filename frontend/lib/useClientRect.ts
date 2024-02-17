@@ -5,7 +5,6 @@ function useClientRect(ref: RefObject<HTMLElement>): DOMRect | null {
 
   const handleResize = useCallback(() => {
     if (ref.current) {
-      console.log("ref", ref, "rect", ref.current.getBoundingClientRect());
       setRect(ref.current.getBoundingClientRect());
     }
   }, [ref]);
