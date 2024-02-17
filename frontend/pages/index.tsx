@@ -3,9 +3,7 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 
-import { useStore } from "../lib/store";
 import useClientRect from "../lib/useClientRect";
-import colors from "../lib/colors";
 import ColorPicker from "../components/ColorPicker";
 import styles from "./index.module.css";
 
@@ -15,12 +13,19 @@ import {
   SaveTeams,
   ListTeams,
 } from "../wailsjs/wailsjs/go/main/App";
+import { main } from "../wailsjs/wailsjs/go/models";
+import { EventsOn } from "../wailsjs/wailsjs/runtime/runtime";
+
+// Typescript will figure out whether to use enum as type or as value
+type Color = main.Color;
+const Color = main.Color;
 
 const Main: NextPage = () => {
   const MAX_TEAMS = 8;
   const router = useRouter();
 
-  const { teams, setTeams } = useStore();
+  // const { teams, setTeams } = useStore();
+  const [teams, setTeams] = useState([] as main.Team[]);
 
   const inputRefs = useRef([] as (HTMLInputElement | null)[]);
   const inputRowRef = useRef<HTMLElement>(null);
@@ -37,6 +42,15 @@ const Main: NextPage = () => {
   const [buzzerOptions, setBuzzerOptions] = useState([
     "Waiting...",
   ] as string[]);
+
+  // Get teams from backend
+  useEffect(() => {
+    ListTeams()
+      .then((teams) => {
+        setTeams(teams);
+      })
+      .catch((err) => console.error(err));
+  }, []);
 
   // Set ports list and select the first one
   useEffect(() => {
@@ -74,8 +88,8 @@ const Main: NextPage = () => {
     }
   }, [teams]);
 
-  const getNextUnusedColor = () => {
-    const color = Object.values(colors).filter(
+  const getNextUnusedColor = (): Color => {
+    const color = Object.values(Color).filter(
       (c) => !teams.map((t) => t.color).includes(c)
     )[0];
     return color;
@@ -91,7 +105,7 @@ const Main: NextPage = () => {
           if (teams.length < MAX_TEAMS) {
             setTeams([
               ...teams,
-              { name: "", color: getNextUnusedColor(), buzzer: undefined },
+              { name: "", color: getNextUnusedColor(), buzzerId: undefined },
             ]);
           }
         }}
@@ -177,13 +191,13 @@ const Main: NextPage = () => {
               }}
             >
               <ColorPicker
-                colors={Object.values(colors)}
+                colors={Object.values(Color)}
                 disabled={teams.map((t) => t.color)}
                 size={rect === null ? 0 : 0.95 * rect.height}
                 selected={team.color}
                 handleSelect={(color: string) => {
                   const newTeams = [...teams];
-                  newTeams[index].color = color;
+                  newTeams[index].color = color as Color;
                   setTeams(newTeams);
                 }}
               />

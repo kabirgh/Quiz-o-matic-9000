@@ -3,16 +3,28 @@ import { useRouter } from "next/router";
 
 import { useEffect, useRef, useState } from "react";
 
-import type { Team } from "../lib/store";
-import { useStore } from "../lib/store";
 import useClientRect from "../lib/useClientRect";
+
+import { ListTeams } from "../wailsjs/wailsjs/go/main/App";
+import { main } from "../wailsjs/wailsjs/go/models";
+
+type Team = main.Team;
 
 const Game: NextPage = () => {
   const router = useRouter();
-  const { teams } = useStore();
+  const [teams, setTeams] = useState([] as Team[]);
   const [played, setPlayed] = useState([] as Team[]);
   const teamRowRef = useRef<HTMLElement>(null);
   const rect = useClientRect(teamRowRef);
+
+  // Get teams from backend
+  useEffect(() => {
+    ListTeams()
+      .then((teams) => {
+        setTeams(teams);
+      })
+      .catch((err) => console.error(err));
+  }, []);
 
   useEffect(() => {
     const keydownHandler = (event: any) => {
