@@ -31,7 +31,7 @@ const Main: NextPage = () => {
   const inputRefs = useRef([] as (HTMLInputElement | null)[]);
   const inputRowRef = useRef<HTMLElement>(null);
   const rect = useClientRect(inputRowRef);
-  const [inputValid, setInputValid] = useState(
+  const [nameInputValid, setNameInputValid] = useState(
     {} as { [key: number]: boolean }
   );
 
@@ -149,12 +149,12 @@ const Main: NextPage = () => {
                 const newTeams = [...teams];
                 newTeams.splice(index, 1);
                 setTeams(newTeams);
-                // Recompute validities since teams may have moved up a row
+                // Recompute nameValidities since teams may have moved up a row
                 const newValid = {} as { [key: number]: boolean };
                 newTeams.forEach((team, index) => {
                   newValid[index] = team.name.trim() === "" ? false : true;
                 });
-                setInputValid(newValid);
+                setNameInputValid(newValid);
               }}
             >
               <MinusOutlined style={{ fontSize: "18px", color: "red" }} />
@@ -165,7 +165,7 @@ const Main: NextPage = () => {
               autoComplete="off"
               style={{
                 gridArea: `${2 * i + 4}/4/${2 * i + 5}/5`,
-                outline: inputValid[index] === false ? "2px solid red" : "",
+                outline: nameInputValid[index] === false ? "2px solid red" : "",
                 outlineOffset: "2px",
               }}
               value={team.name}
@@ -175,15 +175,15 @@ const Main: NextPage = () => {
                 setTeams(newTeams);
               }}
               onFocus={(_event) => {
-                const newValid = { ...inputValid };
+                const newValid = { ...nameInputValid };
                 newValid[index] = true;
-                setInputValid(newValid);
+                setNameInputValid(newValid);
               }}
               onBlur={(event) => {
-                const newValid = { ...inputValid };
+                const newValid = { ...nameInputValid };
                 newValid[index] =
                   event.target.value.trim() === "" ? false : true;
-                setInputValid(newValid);
+                setNameInputValid(newValid);
               }}
             />
             <div
@@ -254,12 +254,19 @@ const Main: NextPage = () => {
         id="start-btn"
         style={{ gridArea: "22/10/23/11" }}
         onClick={() => {
-          const validities = teams.map((t) => {
+          const nameValidities = teams.map((t) => {
             return t !== null && t.name.trim() === "" ? false : true;
           });
+          if (!nameValidities.every((v) => v === true)) {
+            setNameInputValid(Object.assign({}, nameValidities));
+            return;
+          }
 
-          if (!validities.every((v) => v === true)) {
-            setInputValid(Object.assign({}, validities));
+          const anyNoneBuzzers = teams
+            .map((t) => t.buzzerId)
+            .filter((b) => b == "None" || b == undefined);
+          if (anyNoneBuzzers.length > 0) {
+            alert("All teams must have a buzzer");
             return;
           }
 
