@@ -17,7 +17,7 @@ type App struct {
 	serialCtx    context.Context
 	cancelSerial context.CancelFunc
 	teams        []Team
-	// buzzers []string
+	buzzerIds    []string
 }
 
 type Team struct {
@@ -82,6 +82,11 @@ func (a *App) domReady(ctx context.Context) {
 	}
 	// During development, so inspector window fits on the side
 	runtime.WindowSetPosition(a.ctx, 0, 0)
+	// During development, mock buzzer ids
+	a.buzzerIds = []string{"Black", "Orange", "Purple", "White"}
+	for i := 0; i < 4; i++ {
+		runtime.EventsEmit(a.ctx, "newBuzzer", a.buzzerIds[i])
+	}
 }
 
 // beforeClose is called when the application is about to quit,
@@ -93,7 +98,7 @@ func (a *App) beforeClose(ctx context.Context) (prevent bool) {
 
 // shutdown is called at application termination
 func (a *App) shutdown(ctx context.Context) {
-	// Perform your teardown here
+	a.cancelSerial()
 }
 
 func (a *App) ListPorts() ([]string, error) {
@@ -118,16 +123,17 @@ func (a *App) SetPort(portName string) {
 	go a.readSerial(a.serialCtx, portName)
 }
 
-// Frontend calls this to save teams
+// Frontend calls this to save teams across pages
 func (a *App) SaveTeams(teams []Team) {
-	fmt.Println("----------------------------------------------------")
-	fmt.Println("Saving teams", teams)
 	a.teams = teams
 }
 
-// Get the list of teams
 func (a *App) ListTeams() []Team {
 	return a.teams
+}
+
+func (a *App) ListBuzzerIds() []string {
+	return a.buzzerIds
 }
 
 const (

@@ -26,6 +26,7 @@ const Game: NextPage = () => {
       .catch((err) => console.error(err));
   }, []);
 
+  // For testing and going back to home screen
   useEffect(() => {
     const keydownHandler = (event: any) => {
       switch (event.code) {

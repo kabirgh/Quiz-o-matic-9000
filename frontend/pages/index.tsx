@@ -12,6 +12,7 @@ import {
   SetPort,
   SaveTeams,
   ListTeams,
+  ListBuzzerIds,
 } from "../wailsjs/wailsjs/go/main/App";
 import { main } from "../wailsjs/wailsjs/go/models";
 import { EventsOn } from "../wailsjs/wailsjs/runtime/runtime";
@@ -39,9 +40,7 @@ const Main: NextPage = () => {
     undefined as string | undefined
   );
 
-  const [buzzerOptions, setBuzzerOptions] = useState([
-    "Waiting...",
-  ] as string[]);
+  const [buzzerOptions, setBuzzerOptions] = useState(["None"] as string[]);
 
   // Get teams from backend
   useEffect(() => {
@@ -64,13 +63,18 @@ const Main: NextPage = () => {
 
   // Listen for buzzers
   useEffect(() => {
+    // Get existing buzzers if already connected
+    ListBuzzerIds()
+      .then((buzzerIds) => {
+        setBuzzerOptions((prev) => {
+          return Array.from(new Set([...prev, ...buzzerIds]));
+        });
+      })
+      .catch((err) => console.error(err));
+
     const cancel = EventsOn("newBuzzer", (id: string) => {
       setBuzzerOptions((prev) => {
-        if (prev.includes(id)) {
-          return prev;
-        }
-        // Remove "Waiting..." once a buzzer is connected
-        return [...prev, id].filter((id) => id !== "Waiting...");
+        return Array.from(new Set([...prev, id]));
       });
     });
 
@@ -207,12 +211,34 @@ const Main: NextPage = () => {
               style={{
                 gridArea: `${2 * i + 4}/8/${2 * i + 5}/9`,
               }}
+              onChange={(event) => {
+                const newTeams = [...teams];
+                const buzzerId = event.target.value;
+                if (buzzerId === "None") {
+                  return;
+                }
+                newTeams[index].buzzerId = buzzerId;
+                setTeams(newTeams);
+              }}
             >
-              {buzzerOptions.map((buzzerId) => (
-                <option key={buzzerId} value={buzzerId}>
-                  {buzzerId}
-                </option>
-              ))}
+              {buzzerOptions.map((buzzerId) => {
+                const selectedBuzzerIds = teams
+                  .filter((_t, idx) => idx != index)
+                  .map((t) => t.buzzerId);
+
+                return (
+                  <option
+                    key={buzzerId}
+                    value={buzzerId}
+                    disabled={
+                      selectedBuzzerIds.includes(buzzerId) &&
+                      buzzerId !== "None"
+                    }
+                  >
+                    {buzzerId}
+                  </option>
+                );
+              })}
             </select>
           </Fragment>
         );
@@ -237,10 +263,6 @@ const Main: NextPage = () => {
             return;
           }
 
-          console.log(
-            "========================================= Saving teams front",
-            teams
-          );
           SaveTeams(teams);
 
           router.push("/game");
