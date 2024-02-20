@@ -8,8 +8,6 @@ import ColorPicker from "../components/ColorPicker";
 import styles from "./index.module.css";
 
 import {
-  ListPorts,
-  SetPort,
   SaveTeams,
   ListTeams,
   ListBuzzerIds,
@@ -32,21 +30,13 @@ const Main: NextPage = () => {
   const MAX_TEAMS = 8;
   const router = useRouter();
 
-  // const { teams, setTeams } = useStore();
   const [teams, setTeams] = useState([] as main.Team[]);
-
   const inputRefs = useRef([] as (HTMLInputElement | null)[]);
   const inputRowRef = useRef<HTMLElement>(null);
   const rect = useClientRect(inputRowRef);
   const [nameInputValid, setNameInputValid] = useState(
     {} as { [key: number]: boolean }
   );
-
-  const [portOptions, setPortOptions] = useState([] as string[]);
-  const [selectedPort, setSelectedPort] = useState(
-    undefined as string | undefined
-  );
-
   const [buzzerOptions, setBuzzerOptions] = useState(["None"] as string[]);
 
   // Get teams from backend
@@ -54,16 +44,6 @@ const Main: NextPage = () => {
     ListTeams()
       .then((teams) => {
         setTeams(teams);
-      })
-      .catch((err) => console.error(err));
-  }, []);
-
-  // Set ports list and select the first one
-  useEffect(() => {
-    ListPorts()
-      .then((ports) => {
-        setPortOptions(ports);
-        setSelectedPort(ports[0]);
       })
       .catch((err) => console.error(err));
   }, []);
@@ -123,26 +103,6 @@ const Main: NextPage = () => {
       >
         <PlusOutlined style={{ fontSize: "18px", color: "green" }} />
       </button>
-      <select
-        style={{
-          gridArea: "2/10/3/11",
-          height: "40%",
-          marginTop: "auto", // centers element vertically
-          marginBottom: "auto",
-        }}
-        value={selectedPort}
-        onChange={(event) => {
-          setSelectedPort(event.target.value);
-          console.log("setting port to ", event.target.value);
-          SetPort(event.target.value);
-        }}
-      >
-        {portOptions.map((port) => (
-          <option key={port} value={port}>
-            {port}
-          </option>
-        ))}
-      </select>
       {teams.map((team, index) => {
         const i = index + 1;
         return (

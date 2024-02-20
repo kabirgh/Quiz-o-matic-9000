@@ -4,10 +4,6 @@ import {main} from '../models';
 
 export function ListBuzzerIds():Promise<Array<string>>;
 
-export function ListPorts():Promise<Array<string>>;
-
 export function ListTeams():Promise<Array<main.Team>>;
 
 export function SaveTeams(arg1:Array<main.Team>):Promise<void>;
-
-export function SetPort(arg1:string):Promise<void>;
