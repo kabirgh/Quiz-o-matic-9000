@@ -6,6 +6,8 @@ toolchain go1.22.0
 
 require github.com/wailsapp/wails/v2 v2.8.0
 
+require github.com/gorilla/websocket v1.5.1
+
 require go.bug.st/serial v1.6.2
 
 require (
