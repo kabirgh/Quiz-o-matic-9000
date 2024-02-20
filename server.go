@@ -26,18 +26,10 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-type HandlerWithContext func(ctx context.Context, w http.ResponseWriter, r *http.Request)
-
-func withContext(ctx context.Context, handler HandlerWithContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		handler(ctx, w, r)
-	}
-}
-
-func buzzerHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (a *App) buzzerHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		runtime.LogInfof(ctx, "Upgrade error: %v", err)
+		runtime.LogInfof(a.ctx, "Upgrade error: %v", err)
 		return
 	}
 	defer conn.Close()
@@ -45,7 +37,7 @@ func buzzerHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) 
 	for {
 		messageType, message, err := conn.ReadMessage()
 		if err != nil {
-			runtime.LogInfof(ctx, "Read error: %v", err)
+			runtime.LogInfof(a.ctx, "Read error: %v", err)
 			break
 		}
 
@@ -59,55 +51,60 @@ func buzzerHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) 
 		action, _ := strconv.Atoi(buzzerData[1])
 
 		if buzzerID <= 10 {
-			runtime.LogWarningf(ctx, "Buzzer %d cannot have an ID <= 10\n", buzzerID)
+			runtime.LogWarningf(a.ctx, "Buzzer %d cannot have an ID <= 10", buzzerID)
 			continue
 		}
 
 		switch action {
 		case Register:
-			runtime.LogInfof(ctx, "Buzzer %d registered\n", buzzerID)
+			runtime.LogInfof(a.ctx, "Buzzer %d registered", buzzerID)
 		case Click:
-			runtime.LogInfof(ctx, "Buzzer %d clicked\n", buzzerID)
+			runtime.LogInfof(a.ctx, "Buzzer %d clicked", buzzerID)
 		case Ping:
 			if err := conn.WriteMessage(messageType, []byte("pong")); err != nil {
-				runtime.LogInfof(ctx, "Write error: %v", err)
+				runtime.LogInfof(a.ctx, "Write error: %v", err)
 			}
 		default:
-			runtime.LogWarningf(ctx, "Buzzer %d sent invalid action %d.\n", buzzerID, action)
+			runtime.LogWarningf(a.ctx, "Buzzer %d sent invalid action %d.", buzzerID, action)
 		}
 	}
 }
 
-func startServer(ctx context.Context) {
-	go broadcastUDP(ctx)
+func (a *App) startServer() {
+	go a.broadcastUDP()
 
-	http.Handle("/", withContext(ctx, buzzerHandler))
+	// Wrap buzzerHandler method to be used with http.Handle
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		a.buzzerHandler(w, r)
+	})
+
+	http.Handle("/", handler)
 	srv := &http.Server{Addr: ":" + wsPort}
 
 	go func() {
-		runtime.LogInfof(ctx, "WebSocket server starting on : %v...", wsPort)
+		runtime.LogInfof(a.ctx, "WebSocket server starting on : %v...", wsPort)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			runtime.LogErrorf(ctx, "ListenAndServe error: %v", err)
+			runtime.LogErrorf(a.ctx, "ListenAndServe error: %v", err)
 		}
 	}()
 
-	<-ctx.Done() // Wait for context cancellation
+	<-a.ctx.Done() // Wait for context cancellation
 
-	runtime.LogInfof(ctx, "Shutting down WebSocket server...")
+	runtime.LogInfof(a.ctx, "Shutting down WebSocket server...")
 	if err := srv.Shutdown(context.Background()); err != nil {
-		runtime.LogWarningf(ctx, "WebSocket server Shutdown failed: %v", err)
+		runtime.LogWarningf(a.ctx, "WebSocket server Shutdown failed: %v", err)
 	}
 }
 
-func broadcastUDP(ctx context.Context) {
+func (a *App) broadcastUDP() {
 	addr := "239.1.1.234:4210"
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
-		runtime.LogErrorf(ctx, "Failed to resolve UDP address: %v", err)
+		runtime.LogErrorf(a.ctx, "Failed to resolve UDP address: %v", err)
 	}
 	conn, err := net.DialUDP("udp", nil, udpAddr)
 	if err != nil {
-		runtime.LogErrorf(ctx, "Failed to dial UDP: %v", err)
+		runtime.LogErrorf(a.ctx, "Failed to dial UDP: %v", err)
 	}
 	defer conn.Close()
 
@@ -119,10 +116,10 @@ func broadcastUDP(ctx context.Context) {
 		_, err := conn.Write(message)
 
 		if err != nil {
-			runtime.LogErrorf(ctx, "Failed to send message: %v", err)
+			runtime.LogErrorf(a.ctx, "Failed to send message: %v", err)
 			continue
 		}
 
-		runtime.LogDebugf(ctx, "Sent multicast message to %s: %s", addr, message)
+		runtime.LogDebugf(a.ctx, "Sent multicast message to %s: %s", addr, message)
 	}
 }

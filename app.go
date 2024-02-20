@@ -70,8 +70,7 @@ func (a *App) startup(ctx context.Context) {
 	a.serialDone = make(chan string, 1)
 	a.serialCtx, a.cancelSerial = context.WithCancel(context.Background())
 
-	runtime.LogDebugf(ctx, "Calling startServer...")
-	go startServer(ctx) // Start the server in the background
+	go a.startServer() // Start the server in the background
 }
 
 // domReady is called after front-end resources have been loaded
