@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -13,9 +12,9 @@ import (
 )
 
 const (
-	Register int = 0
-	Click    int = 1
-	Ping     int = 2
+	Register string = "0"
+	Press    string = "1"
+	Ping     string = "2"
 )
 
 const wsPort = "4649"
@@ -43,29 +42,33 @@ func (a *App) buzzerHandler(w http.ResponseWriter, r *http.Request) {
 
 		buzzerData := strings.Split(string(message), ",")
 		if len(buzzerData) != 2 {
-			// Handle error
+			runtime.LogErrorf(a.ctx, "Invalid message: %s", message)
 			continue
 		}
 
-		buzzerID, _ := strconv.Atoi(buzzerData[0])
-		action, _ := strconv.Atoi(buzzerData[1])
-
-		if buzzerID <= 10 {
-			runtime.LogWarningf(a.ctx, "Buzzer %d cannot have an ID <= 10", buzzerID)
-			continue
-		}
+		buzzerId := buzzerData[0]
+		action := buzzerData[1]
 
 		switch action {
 		case Register:
-			runtime.LogInfof(a.ctx, "Buzzer %d registered", buzzerID)
-		case Click:
-			runtime.LogInfof(a.ctx, "Buzzer %d clicked", buzzerID)
+			runtime.LogInfof(a.ctx, "Buzzer %s registered", buzzerId)
+			// Don't add the buzzer ID if it's already in the list
+			for _, id := range a.buzzerIds {
+				if id == buzzerId {
+					return
+				}
+			}
+			a.buzzerIds = append(a.buzzerIds, buzzerId)
+			runtime.EventsEmit(a.ctx, "register", buzzerId)
+		case Press:
+			runtime.LogInfof(a.ctx, "Buzzer %s pressed", buzzerId)
+			runtime.EventsEmit(a.ctx, "press", buzzerId)
 		case Ping:
 			if err := conn.WriteMessage(messageType, []byte("pong")); err != nil {
 				runtime.LogInfof(a.ctx, "Write error: %v", err)
 			}
 		default:
-			runtime.LogWarningf(a.ctx, "Buzzer %d sent invalid action %d.", buzzerID, action)
+			runtime.LogWarningf(a.ctx, "Buzzer %s sent invalid action %s.", buzzerId, action)
 		}
 	}
 }

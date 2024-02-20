@@ -61,6 +61,7 @@ func NewApp() *App {
 		teams: []Team{
 			{Name: "", Color: ColorRed, BuzzerId: nil},
 		},
+		buzzerIds: []string{},
 	}
 }
 
@@ -84,11 +85,6 @@ func (a *App) domReady(ctx context.Context) {
 	}
 	// During development, so inspector window fits on the side
 	runtime.WindowSetPosition(a.ctx, 0, 0)
-	// During development, mock buzzer ids
-	a.buzzerIds = []string{"Black", "Orange", "Purple", "White"}
-	for i := 0; i < 4; i++ {
-		runtime.EventsEmit(a.ctx, "newBuzzer", a.buzzerIds[i])
-	}
 }
 
 // beforeClose is called when the application is about to quit,

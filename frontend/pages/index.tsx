@@ -21,6 +21,13 @@ import { EventsOn } from "../wailsjs/wailsjs/runtime/runtime";
 type Color = main.Color;
 const Color = main.Color;
 
+const BUZZER_ID_TO_NAME: { [key: string]: string } = {
+  "11": "White",
+  "12": "Orange",
+  "13": "Black",
+  "14": "Purple",
+};
+
 const Main: NextPage = () => {
   const MAX_TEAMS = 8;
   const router = useRouter();
@@ -72,7 +79,7 @@ const Main: NextPage = () => {
       })
       .catch((err) => console.error(err));
 
-    const cancel = EventsOn("newBuzzer", (id: string) => {
+    const cancel = EventsOn("register", (id: string) => {
       setBuzzerOptions((prev) => {
         return Array.from(new Set([...prev, id]));
       });
@@ -220,6 +227,7 @@ const Main: NextPage = () => {
                 newTeams[index].buzzerId = buzzerId;
                 setTeams(newTeams);
               }}
+              value={team.buzzerId || "None"}
             >
               {buzzerOptions.map((buzzerId) => {
                 const selectedBuzzerIds = teams
@@ -235,7 +243,7 @@ const Main: NextPage = () => {
                       buzzerId !== "None"
                     }
                   >
-                    {buzzerId}
+                    {BUZZER_ID_TO_NAME[buzzerId] || buzzerId}
                   </option>
                 );
               })}

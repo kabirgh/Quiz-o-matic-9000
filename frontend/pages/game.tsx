@@ -7,6 +7,7 @@ import useClientRect from "../lib/useClientRect";
 
 import { ListTeams } from "../wailsjs/wailsjs/go/main/App";
 import { main } from "../wailsjs/wailsjs/go/models";
+import { EventsOn } from "../wailsjs/wailsjs/runtime/runtime";
 
 type Team = main.Team;
 
@@ -25,6 +26,21 @@ const Game: NextPage = () => {
       })
       .catch((err) => console.error(err));
   }, []);
+
+  // Listen to buzzer presses
+  useEffect(() => {
+    const cancel = EventsOn("press", (id: string) => {
+      const team = teams.find((team) => team.buzzerId === id);
+      if (team) {
+        setPlayed((prev) => {
+          if (prev.includes(team)) return prev;
+          return [...prev, team];
+        });
+      }
+    });
+
+    return cancel;
+  }, [teams]);
 
   // For testing and going back to home screen
   useEffect(() => {
