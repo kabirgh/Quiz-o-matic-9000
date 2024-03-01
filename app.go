@@ -3,14 +3,20 @@ package main
 import (
 	"context"
 
+	"github.com/gorilla/websocket"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
 type App struct {
-	ctx       context.Context
-	teams     []Team
-	buzzerIds []string
+	ctx     context.Context
+	teams   []Team
+	buzzers []Buzzer
+}
+
+type Buzzer struct {
+	Id   string
+	Conn *websocket.Conn
 }
 
 type Team struct {
@@ -54,7 +60,9 @@ func NewApp() *App {
 		teams: []Team{
 			{Name: "", Color: ColorRed, BuzzerId: nil},
 		},
-		buzzerIds: []string{},
+		buzzers: []Buzzer{
+			{Id: "Keyboard", Conn: nil},
+		},
 	}
 }
 
@@ -92,5 +100,9 @@ func (a *App) ListTeams() []Team {
 }
 
 func (a *App) ListBuzzerIds() []string {
-	return a.buzzerIds
+	var buzzerIds []string
+	for _, buzzer := range a.buzzers {
+		buzzerIds = append(buzzerIds, buzzer.Id)
+	}
+	return buzzerIds
 }

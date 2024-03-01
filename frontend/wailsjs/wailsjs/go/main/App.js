@@ -10,6 +10,10 @@ export function ListTeams() {
   return window['go']['main']['App']['ListTeams']();
 }
 
+export function PingBuzzers() {
+  return window['go']['main']['App']['PingBuzzers']();
+}
+
 export function SaveTeams(arg1) {
   return window['go']['main']['App']['SaveTeams'](arg1);
 }

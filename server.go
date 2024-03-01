@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -53,12 +54,13 @@ func (a *App) buzzerHandler(w http.ResponseWriter, r *http.Request) {
 		case Register:
 			runtime.LogInfof(a.ctx, "Buzzer %s registered", buzzerId)
 			// Don't add the buzzer ID if it's already in the list
-			for _, id := range a.buzzerIds {
+			buzzerIds := a.ListBuzzerIds()
+			for _, id := range buzzerIds {
 				if id == buzzerId {
 					return
 				}
 			}
-			a.buzzerIds = append(a.buzzerIds, buzzerId)
+			a.buzzers = append(a.buzzers, Buzzer{Id: buzzerId, Conn: conn})
 			runtime.EventsEmit(a.ctx, "register", buzzerId)
 		case Press:
 			runtime.LogInfof(a.ctx, "Buzzer %s pressed", buzzerId)
@@ -71,6 +73,48 @@ func (a *App) buzzerHandler(w http.ResponseWriter, r *http.Request) {
 			runtime.LogWarningf(a.ctx, "Buzzer %s sent invalid action %s.", buzzerId, action)
 		}
 	}
+}
+
+// Return half the round-trip time of ping to buzzer in ms
+func (a *App) PingBuzzers() map[string]int {
+	pingTimes := make(map[string]int)
+	var wg sync.WaitGroup
+	var mu sync.Mutex // Mutex for safe access to pingTimes map
+
+	for _, buzzer := range a.buzzers {
+		if buzzer.Conn == nil {
+			continue
+		}
+
+		var pingSentTime time.Time
+
+		buzzer.Conn.SetPongHandler(func(appData string) error {
+			mu.Lock() // Ensure safe access to pingTimes
+			pingTimes[buzzer.Id] = int(time.Since(pingSentTime).Milliseconds()) / 2
+			mu.Unlock()
+
+			runtime.LogInfof(a.ctx, "Pong received, round-trip time: %d", pingTimes[buzzer.Id])
+			wg.Done() // Mark the pong as received
+			return nil
+		})
+
+		wg.Add(1)
+
+		pingSentTime = time.Now()
+
+		err := buzzer.Conn.WriteMessage(websocket.PingMessage, []byte{})
+		if err != nil {
+			runtime.LogErrorf(a.ctx, "Ping error: %s", err)
+			mu.Lock()
+			pingTimes[buzzer.Id] = -1
+			mu.Unlock()
+			wg.Done() // Error occurred, mark this as done
+		}
+	}
+
+	wg.Wait() // Wait for all pongs to be received or errors to be handled
+
+	return pingTimes
 }
 
 func (a *App) startServer() {

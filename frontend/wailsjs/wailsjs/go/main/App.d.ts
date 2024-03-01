@@ -6,4 +6,6 @@ export function ListBuzzerIds():Promise<Array<string>>;
 
 export function ListTeams():Promise<Array<main.Team>>;
 
+export function PingBuzzers():Promise<{[key: string]: number}>;
+
 export function SaveTeams(arg1:Array<main.Team>):Promise<void>;

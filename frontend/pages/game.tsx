@@ -56,6 +56,14 @@ const Game: NextPage = () => {
           setPlayed([]);
           router.push("/");
           break;
+        case "Space":
+          const team = teams.find((team) => team.buzzerId === "Keyboard");
+          if (team) {
+            setPlayed((prev) => {
+              if (prev.includes(team)) return prev;
+              return [...prev, team];
+            });
+          }
       }
     };
 
