@@ -16,7 +16,6 @@ import (
 const (
 	Connect string = "0"
 	Press   string = "1"
-	Ping    string = "2"
 )
 
 const wsPort = "4649"
@@ -36,7 +35,7 @@ func (a *App) buzzerHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	for {
-		messageType, message, err := conn.ReadMessage()
+		_, message, err := conn.ReadMessage()
 		if err != nil {
 			runtime.LogInfof(a.ctx, "Read error: %v", err)
 			break
@@ -66,10 +65,6 @@ func (a *App) buzzerHandler(w http.ResponseWriter, r *http.Request) {
 		case Press:
 			runtime.LogInfof(a.ctx, "Buzzer %s pressed", buzzerId)
 			runtime.EventsEmit(a.ctx, "press", buzzerId)
-		case Ping:
-			if err := conn.WriteMessage(messageType, []byte("pong")); err != nil {
-				runtime.LogInfof(a.ctx, "Write error: %v", err)
-			}
 		default:
 			runtime.LogWarningf(a.ctx, "Buzzer %s sent invalid action %s.", buzzerId, action)
 		}
