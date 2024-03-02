@@ -6,7 +6,10 @@ toolchain go1.22.0
 
 require github.com/wailsapp/wails/v2 v2.8.0
 
-require github.com/gorilla/websocket v1.5.1
+require (
+	github.com/gorilla/websocket v1.5.1
+	github.com/harry1453/go-xinput v0.0.0-20200323142755-cad6b755687a
+)
 
 require (
 	github.com/bep/debounce v1.2.1 // indirect
