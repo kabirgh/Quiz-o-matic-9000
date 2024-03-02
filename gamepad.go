@@ -43,10 +43,9 @@ func (a *App) pollForControllers() {
 }
 
 func (a *App) pollControllerInput(controller xinput.ControllerIndex, buzzerId string) {
-	var oldState *xinput.ControllerState
-	for {
-		// Controller disconnected
-		if slices.Contains(xinput.GetConnectedControllers(), controller) {
+	// Controller error or disconnection
+	defer func() {
+		if r := recover(); r != nil {
 			// Remove buzzer
 			runtime.LogInfof(a.ctx, "%s disconnected", controller)
 			newBuzzers := []Buzzer{}
@@ -59,10 +58,11 @@ func (a *App) pollControllerInput(controller xinput.ControllerIndex, buzzerId st
 			a.buzzers = newBuzzers
 			a.buzzersMutex.Unlock()
 			runtime.EventsEmit(a.ctx, "disconnect", buzzerId)
-
-			xinput.GetConnectedControllers()
 		}
+	}()
 
+	var oldState *xinput.ControllerState
+	for {
 		newState, err := xinput.GetControllerState(controller)
 		if err != nil {
 			runtime.LogError(a.ctx, err.Error())
