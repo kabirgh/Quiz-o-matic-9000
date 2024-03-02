@@ -266,7 +266,7 @@ const Main: NextPage = () => {
               }/col-buzzers-end`,
             }}
           >
-            {buzzerId}
+            {BUZZER_ID_TO_NAME[buzzerId] || buzzerId}
           </div>
         );
       })}

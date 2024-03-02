@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"slices"
@@ -26,6 +27,32 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+func (a *App) getBuzzerIdFromConn(conn *websocket.Conn) (string, error) {
+	for _, buzzer := range a.buzzers {
+		if buzzer.Conn == conn {
+			return buzzer.Id, nil
+		}
+	}
+
+	return "", errors.New("Buzzer not found")
+}
+
+func (a *App) unregisterBuzzer(buzzerId string) {
+	// Remove buzzer
+	runtime.LogInfof(a.ctx, "%s disconnected", buzzerId)
+	newBuzzers := []Buzzer{}
+	for _, buzzer := range a.buzzers {
+		if buzzer.Id != buzzerId {
+			newBuzzers = append(newBuzzers, buzzer)
+		}
+	}
+	a.buzzersMutex.Lock()
+	a.buzzers = newBuzzers
+	a.buzzersMutex.Unlock()
+
+	runtime.EventsEmit(a.ctx, "disconnect", buzzerId)
+}
+
 func (a *App) buzzerHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -34,10 +61,21 @@ func (a *App) buzzerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
+	go a.checkForDisconnection(conn)
+
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			runtime.LogInfof(a.ctx, "Read error: %v", err)
+
+			bId, err := a.getBuzzerIdFromConn(conn)
+			if err != nil {
+				runtime.LogErrorf(a.ctx, "Buzzer not found: %v", err)
+				break
+			}
+
+			runtime.LogInfof(a.ctx, "%s disconnected", bId)
+			a.unregisterBuzzer(bId)
 			break
 		}
 
@@ -56,7 +94,7 @@ func (a *App) buzzerHandler(w http.ResponseWriter, r *http.Request) {
 			// Don't add the buzzer ID if it's already in the list
 			buzzerIds := a.ListBuzzerIds()
 			if slices.Contains(buzzerIds, buzzerId) {
-				return
+				continue
 			}
 			a.buzzersMutex.Lock()
 			a.buzzers = append(a.buzzers, Buzzer{Id: buzzerId, Conn: conn})
@@ -71,8 +109,39 @@ func (a *App) buzzerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Check for disconnections with ping/pong
+func (a *App) checkForDisconnection(conn *websocket.Conn) {
+	pongWait := 2 * time.Second
+	pingPeriod := (pongWait * 9) / 10
+
+	// Set the pong handler to update the read deadline upon receiving a pong
+	conn.SetReadDeadline(time.Now().Add(pongWait))
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
+	// Launch a goroutine to send pings periodically
+	go func() {
+		ticker := time.NewTicker(pingPeriod)
+		defer ticker.Stop()
+		for range ticker.C {
+			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				buzzerId, getErr := a.getBuzzerIdFromConn(conn)
+				if getErr != nil {
+					runtime.LogErrorf(a.ctx, "Buzzer not found: %v", getErr)
+					return
+				}
+
+				runtime.LogErrorf(a.ctx, "Ping write to buzzer %s failed: %s", buzzerId, err)
+				return // End the goroutine if we cannot send a ping
+			}
+		}
+	}()
+}
+
 // Return half the round-trip time of ping to buzzer in ms
-func (a *App) PingBuzzers() map[string]int {
+func (a *App) GetBuzzerLatencies() map[string]int {
 	pingTimes := make(map[string]int)
 	var wg sync.WaitGroup
 	var mu sync.Mutex // Mutex for safe access to pingTimes map
