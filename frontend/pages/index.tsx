@@ -37,7 +37,7 @@ const Main: NextPage = () => {
   const [nameInputValid, setNameInputValid] = useState(
     {} as { [key: number]: boolean }
   );
-  const [buzzerOptions, setBuzzerOptions] = useState(["None"] as string[]);
+  const [buzzerIds, setBuzzerIds] = useState([] as string[]);
 
   // Get teams from backend
   useEffect(() => {
@@ -53,14 +53,14 @@ const Main: NextPage = () => {
     // Get existing buzzers if already connected
     ListBuzzerIds()
       .then((buzzerIds) => {
-        setBuzzerOptions((prev) => {
+        setBuzzerIds((prev) => {
           return Array.from(new Set([...prev, ...buzzerIds]));
         });
       })
       .catch((err) => console.error(err));
 
     const cancel = EventsOn("register", (id: string) => {
-      setBuzzerOptions((prev) => {
+      setBuzzerIds((prev) => {
         return Array.from(new Set([...prev, id]));
       });
     });
@@ -197,14 +197,14 @@ const Main: NextPage = () => {
               }}
               value={team.buzzerId || "None"}
             >
-              {buzzerOptions.map((buzzerId) => {
+              {buzzerIds.concat("None").map((buzzerId, buzzerIndex) => {
                 const selectedBuzzerIds = teams
                   .filter((_t, idx) => idx != index)
                   .map((t) => t.buzzerId);
 
                 return (
                   <option
-                    key={buzzerId}
+                    key={buzzerIndex}
                     value={buzzerId}
                     disabled={
                       selectedBuzzerIds.includes(buzzerId) &&
@@ -216,31 +216,54 @@ const Main: NextPage = () => {
                 );
               })}
             </select>
-            <div
-              id="vert-divider"
-              style={{
-                gridArea: "row-add-start/col-divider/21/col-divider",
-                backgroundColor: "rgba(255, 255, 255, 0.8)",
-                width: "1px",
-                boxShadow: "0px 0px 1px 1px rgba(255, 255, 255, 0.2)",
-              }}
-            ></div>
-            <div
-              id="buzzer-list-title"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                fontFamily: "Arvo",
-                fontSize: "2vh",
-                gridArea:
-                  "row-add-start/col-buzzers-start/row-add-end/col-buzzers-start",
-              }}
-            >
-              Buzzers
-            </div>
           </Fragment>
+        );
+      })}
+
+      <div
+        id="vert-divider"
+        style={{
+          gridArea: "row-add-start/col-divider/21/col-divider",
+          backgroundColor: "rgba(255, 255, 255, 0.8)",
+          width: "1px",
+          boxShadow: "0px 0px 1px 1px rgba(255, 255, 255, 0.2)",
+        }}
+      ></div>
+
+      <div
+        id="buzzer-list-title"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "white",
+          fontFamily: "Arvo",
+          fontSize: "3vh",
+          gridArea:
+            "row-add-start/col-buzzers-start/row-add-end/col-buzzers-start",
+        }}
+      >
+        Connected
+      </div>
+      {buzzerIds.map((buzzerId, index) => {
+        const i = index + 1;
+        return (
+          <div
+            key={index}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontFamily: "Arvo",
+              fontSize: "2vh",
+              gridArea: `${2 * i + 4}/col-buzzers-start/${
+                2 * i + 5
+              }/col-buzzers-end`,
+            }}
+          >
+            {buzzerId}
+          </div>
         );
       })}
 
