@@ -2,21 +2,25 @@ package main
 
 import (
 	"context"
+	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/harry1453/go-xinput/xinput"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
 type App struct {
-	ctx     context.Context
-	teams   []Team
-	buzzers []Buzzer
+	ctx          context.Context
+	teams        []Team
+	buzzers      []Buzzer
+	buzzersMutex sync.Mutex
 }
 
 type Buzzer struct {
-	Id   string
-	Conn *websocket.Conn
+	Id              string
+	Conn            *websocket.Conn        // buzzer boxes
+	ControllerIndex xinput.ControllerIndex // game controllers
 }
 
 type Team struct {
@@ -69,7 +73,8 @@ func NewApp() *App {
 // startup is called at application startup
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	go a.startServer() // Start the server in the background
+	go a.startServer()        // Start the server in the background
+	go a.pollForControllers() // Look for game controllers
 }
 
 // domReady is called after front-end resources have been loaded
