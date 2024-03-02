@@ -37,6 +37,15 @@ const Main: NextPage = () => {
     {} as { [key: number]: boolean }
   );
   const [buzzerIds, setBuzzerIds] = useState([] as string[]);
+  // buzzer id : timeout function
+  const [pressedBuzzers, setPressedBuzzers] = useState(
+    {} as {
+      [key: string]: {
+        timeout: NodeJS.Timeout;
+        timestamp: number;
+      };
+    }
+  );
 
   // Get teams from backend
   useEffect(() => {
@@ -82,7 +91,43 @@ const Main: NextPage = () => {
   useEffect(() => {
     const cancel = EventsOn("press", (id: string) => {});
     return cancel;
-  }, [teams]);
+  }, []);
+
+  useEffect(() => {
+    const buzzerId = "Keyboard";
+    const keydownHandler = (event: any) => {
+      switch (event.code) {
+        case "Space":
+          // Clear existing timeout if there is one
+          if (pressedBuzzers[buzzerId]) {
+            clearTimeout(pressedBuzzers[buzzerId].timeout);
+          }
+          // Set new timeout to remove buzzer from pressed state after some time
+          const timeout = setTimeout(() => {
+            setPressedBuzzers((current) => {
+              const updated = { ...current };
+              delete updated[buzzerId];
+              return updated;
+            });
+          }, 1000);
+          // Update state with new timeout
+          setPressedBuzzers((prev) => ({
+            ...prev,
+            [buzzerId]: { timeout, timestamp: Date.now() },
+          }));
+          break;
+      }
+    };
+
+    addEventListener("keydown", keydownHandler);
+    return () => {
+      removeEventListener("keydown", keydownHandler);
+      // Clear all timeouts when component unmounts
+      Object.values(pressedBuzzers).forEach(({ timeout }) =>
+        clearTimeout(timeout)
+      );
+    };
+  }, [pressedBuzzers]);
 
   const getNextUnusedColor = (): Color => {
     const color = Object.values(Color).filter(
@@ -251,9 +296,18 @@ const Main: NextPage = () => {
       </div>
       {buzzerIds.map((buzzerId, index) => {
         const i = index + 1;
+        const isPressed = !!pressedBuzzers[buzzerId];
+        // Re-render if pressed before animation completes
+        const key = isPressed
+          ? `${buzzerId}-${i}-${pressedBuzzers[buzzerId].timestamp}`
+          : `${buzzerId}-${i}`;
+        const className = isPressed ? styles.glowingText : "";
+
         return (
           <div
-            key={index}
+            id={`${buzzerId}-${i}`}
+            key={key}
+            className={className}
             style={{
               display: "flex",
               alignItems: "center",
@@ -264,6 +318,9 @@ const Main: NextPage = () => {
               gridArea: `${2 * i + 4}/col-buzzers-start/${
                 2 * i + 5
               }/col-buzzers-end`,
+              textShadow: isPressed
+                ? "0 0 10px white, 0 0 20px white, 0 0 30px white, 0 0 40px white"
+                : "none",
             }}
           >
             {BUZZER_ID_TO_NAME[buzzerId] || buzzerId}

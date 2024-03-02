@@ -36,19 +36,15 @@
   font-family: "Arvo";
 }
 
-@keyframes wiggleAnimation {
-  0%,
-  100% {
-    transform: rotate(0deg);
+@keyframes glowFadeOut {
+  from {
+    text-shadow: 0 0 10px white, 0 0 20px white, 0 0 30px white, 0 0 40px white;
   }
-  25% {
-    transform: rotate(-5deg);
-  }
-  75% {
-    transform: rotate(5deg);
+  to {
+    text-shadow: none;
   }
 }
 
-.wiggle {
-  animation: wiggleAnimation 1s ease;
+.glowingText {
+  animation: glowFadeOut 1s ease-out forwards;
 }

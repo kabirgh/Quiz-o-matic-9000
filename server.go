@@ -39,7 +39,6 @@ func (a *App) getBuzzerIdFromConn(conn *websocket.Conn) (string, error) {
 
 func (a *App) unregisterBuzzer(buzzerId string) {
 	// Remove buzzer
-	runtime.LogInfof(a.ctx, "%s disconnected", buzzerId)
 	newBuzzers := []Buzzer{}
 	for _, buzzer := range a.buzzers {
 		if buzzer.Id != buzzerId {
@@ -129,7 +128,7 @@ func (a *App) checkForDisconnection(conn *websocket.Conn) {
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				buzzerId, getErr := a.getBuzzerIdFromConn(conn)
 				if getErr != nil {
-					runtime.LogErrorf(a.ctx, "Buzzer not found: %v", getErr)
+					runtime.LogErrorf(a.ctx, "Could not get buzzerId from conn: %v", getErr)
 					return
 				}
 

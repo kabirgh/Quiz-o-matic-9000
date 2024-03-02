@@ -64,6 +64,7 @@ const Game: NextPage = () => {
               return [...prev, team];
             });
           }
+          break;
       }
     };
 
