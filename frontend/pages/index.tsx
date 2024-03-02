@@ -31,7 +31,6 @@ const Main: NextPage = () => {
   const router = useRouter();
 
   const [teams, setTeams] = useState([] as main.Team[]);
-  const inputRefs = useRef([] as (HTMLInputElement | null)[]);
   const inputRowRef = useRef<HTMLElement>(null);
   const rect = useClientRect(inputRowRef);
   const [nameInputValid, setNameInputValid] = useState(
@@ -59,7 +58,7 @@ const Main: NextPage = () => {
       })
       .catch((err) => console.error(err));
 
-    const cancel = EventsOn("register", (id: string) => {
+    const cancel = EventsOn("connect", (id: string) => {
       setBuzzerIds((prev) => {
         return Array.from(new Set([...prev, id]));
       });
@@ -68,15 +67,21 @@ const Main: NextPage = () => {
     return cancel;
   }, []);
 
-  // Adjust the ref array to match the number of teams
+  // Listen for buzzer disconnections
   useEffect(() => {
-    inputRefs.current = inputRefs.current.slice(0, teams.length);
-    if (teams.length > 0) {
-      const lastInputIndex = teams.length - 1;
-      if (inputRefs.current[lastInputIndex]) {
-        inputRefs.current[lastInputIndex]?.focus();
-      }
-    }
+    const cancel = EventsOn("disconnect", (id: string) => {
+      setBuzzerIds((prev) => {
+        return prev.filter((buzzerId) => buzzerId !== id);
+      });
+    });
+
+    return cancel;
+  }, []);
+
+  // Listen for buzzer presses
+  useEffect(() => {
+    const cancel = EventsOn("press", (id: string) => {});
+    return cancel;
   }, [teams]);
 
   const getNextUnusedColor = (): Color => {
@@ -133,7 +138,6 @@ const Main: NextPage = () => {
             </button>
             <input
               id={`team-${i}-input`}
-              ref={(el) => (inputRefs.current[index] = el)}
               autoComplete="off"
               style={{
                 gridArea: `${2 * i + 4}/col-teamname-start/${
