@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -13,9 +14,9 @@ import (
 )
 
 const (
-	Register string = "0"
-	Press    string = "1"
-	Ping     string = "2"
+	Connect string = "0"
+	Press   string = "1"
+	Ping    string = "2"
 )
 
 const wsPort = "4649"
@@ -51,17 +52,17 @@ func (a *App) buzzerHandler(w http.ResponseWriter, r *http.Request) {
 		action := buzzerData[1]
 
 		switch action {
-		case Register:
-			runtime.LogInfof(a.ctx, "Buzzer %s registered", buzzerId)
+		case Connect:
+			runtime.LogInfof(a.ctx, "Buzzer %s connected", buzzerId)
 			// Don't add the buzzer ID if it's already in the list
 			buzzerIds := a.ListBuzzerIds()
-			for _, id := range buzzerIds {
-				if id == buzzerId {
-					return
-				}
+			if slices.Contains(buzzerIds, buzzerId) {
+				return
 			}
+			a.buzzersMutex.Lock()
 			a.buzzers = append(a.buzzers, Buzzer{Id: buzzerId, Conn: conn})
-			runtime.EventsEmit(a.ctx, "register", buzzerId)
+			a.buzzersMutex.Unlock()
+			runtime.EventsEmit(a.ctx, "connect", buzzerId)
 		case Press:
 			runtime.LogInfof(a.ctx, "Buzzer %s pressed", buzzerId)
 			runtime.EventsEmit(a.ctx, "press", buzzerId)

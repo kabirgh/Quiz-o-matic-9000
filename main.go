@@ -21,12 +21,14 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:             "Quiz-o-matic",
-		Width:             1024,
-		Height:            768,
-		DisableResize:     false,
-		Fullscreen:        true,
-		Frameless:         true,
+		Title:         "Quiz-o-matic",
+		Width:         1024,
+		Height:        768,
+		DisableResize: false,
+		Fullscreen:    false,
+		Frameless:     false,
+		// Fullscreen:        true,
+		// Frameless:         true,
 		StartHidden:       false,
 		HideWindowOnClose: false,
 		Assets:            assets,
