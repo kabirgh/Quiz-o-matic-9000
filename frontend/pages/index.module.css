@@ -1,7 +1,8 @@
 .app {
   height: 100vh;
   width: 100vw;
-  background-image: url("/images/bg.png");
+  background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+    url("/images/bg.png");
   background-size: cover;
   display: grid;
   /* xfr == minmax(auto, xfr), which allows content to change row size. Prevent this*/
@@ -33,4 +34,21 @@
   align-items: center;
   color: white;
   font-family: "Arvo";
+}
+
+@keyframes wiggleAnimation {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
+.wiggle {
+  animation: wiggleAnimation 1s ease;
 }
