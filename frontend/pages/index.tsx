@@ -91,7 +91,10 @@ const Main: NextPage = () => {
       <div className={styles.mainTitle}>Quiz-o-matic</div>
       <button
         id="add-btn"
-        style={{ gridArea: "4/2/5/3" }}
+        style={{
+          gridArea:
+            "row-add-start/col-del-add-start/row-add-end/col-del-add-end",
+        }}
         onClick={() => {
           if (teams.length < MAX_TEAMS) {
             setTeams([
@@ -110,7 +113,9 @@ const Main: NextPage = () => {
             <button
               id={`team-${i}-del-btn`}
               style={{
-                gridArea: `${2 * i + 4}/2/${2 * i + 5}/3`,
+                gridArea: `${2 * i + 4}/col-del-add-start/${
+                  2 * i + 5
+                }/col-del-add-end`,
               }}
               onClick={() => {
                 const newTeams = [...teams];
@@ -131,7 +136,9 @@ const Main: NextPage = () => {
               ref={(el) => (inputRefs.current[index] = el)}
               autoComplete="off"
               style={{
-                gridArea: `${2 * i + 4}/4/${2 * i + 5}/5`,
+                gridArea: `${2 * i + 4}/col-teamname-start/${
+                  2 * i + 5
+                }/col-teamname-end`,
                 outline: nameInputValid[index] === false ? "2px solid red" : "",
                 outlineOffset: "2px",
               }}
@@ -155,7 +162,9 @@ const Main: NextPage = () => {
             />
             <div
               style={{
-                gridArea: `${2 * i + 4}/6/${2 * i + 5}/7`,
+                gridArea: `${2 * i + 4}/col-colorsel-start/${
+                  2 * i + 5
+                }/col-colorsel-end`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -174,16 +183,15 @@ const Main: NextPage = () => {
               />
             </div>
             <select
-              id={`team-${i}-select`}
+              id={`team-${i}-buzzer-select`}
               style={{
-                gridArea: `${2 * i + 4}/8/${2 * i + 5}/9`,
+                gridArea: `${2 * i + 4}/col-buzzersel-start/${
+                  2 * i + 5
+                }/col-buzzersel-end`,
               }}
               onChange={(event) => {
                 const newTeams = [...teams];
                 const buzzerId = event.target.value;
-                if (buzzerId === "None") {
-                  return;
-                }
                 newTeams[index].buzzerId = buzzerId;
                 setTeams(newTeams);
               }}
@@ -208,6 +216,30 @@ const Main: NextPage = () => {
                 );
               })}
             </select>
+            <div
+              id="vert-divider"
+              style={{
+                gridArea: "row-add-start/col-divider/21/col-divider",
+                backgroundColor: "rgba(255, 255, 255, 0.8)",
+                width: "1px",
+                boxShadow: "0px 0px 1px 1px rgba(255, 255, 255, 0.2)",
+              }}
+            ></div>
+            <div
+              id="buzzer-list-title"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                fontFamily: "Arvo",
+                fontSize: "2vh",
+                gridArea:
+                  "row-add-start/col-buzzers-start/row-add-end/col-buzzers-start",
+              }}
+            >
+              Buzzers
+            </div>
           </Fragment>
         );
       })}
@@ -220,7 +252,7 @@ const Main: NextPage = () => {
 
       <button
         id="start-btn"
-        style={{ gridArea: "22/10/23/11" }}
+        style={{ gridArea: "22/col-startbtn-start/23/col-startbtn-end" }}
         onClick={() => {
           const nameValidities = teams.map((t) => {
             return t !== null && t.name.trim() === "" ? false : true;
