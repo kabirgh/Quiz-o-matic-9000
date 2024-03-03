@@ -32,6 +32,7 @@
 #define RELEASED HIGH
 
 // Wifi AP information
+const int DEBOUNCE_DELAY = 30;
 const char *ssid = "qom";
 const char *password = "esp8266button";
 WiFiUDP Udp;
@@ -68,34 +69,27 @@ void setup()
 
 void loop()
 {
-  static unsigned long lastPressTime = 0;
-  static int prevState = RELEASED;
-  static bool ignoreLongPress = false;
+  static unsigned long debounceStartTime = 0; // Timestamp of the last debounce check
+  static int prevButtonState = RELEASED;      // Previous state of the button
 
-  if (digitalRead(BUTTON) == PRESSED)
+  int reading = digitalRead(BUTTON);      // Current state of the button
+  unsigned long currentMillis = millis(); // Current time
+
+  // Check if button state has changed
+  if (reading != prevButtonState)
   {
-    if (prevState == RELEASED)
+    debounceStartTime = currentMillis; // Reset debounce timer
+    prevButtonState = reading;         // Update previous button state
+  }
+  // Button state not changed and debounce delay has passed
+  else if ((currentMillis - debounceStartTime) > DEBOUNCE_DELAY)
+  {
+    if (reading == PRESSED)
     {
       sendClick();
-      lastPressTime = millis(); // Button was just pressed. Record start time so we can calculate hold duration
     }
-
-    // If button was held pressed more than 2 seconds, record a long press. Send register event.
-    if (millis() - lastPressTime > 2000 && !ignoreLongPress)
-    {
-      registerBuzzer();
-      ignoreLongPress = true; // Do not re-record long press if button is held for longer
-    }
-
-    prevState = PRESSED;
-  }
-  else
-  {
-    prevState = RELEASED;
-    ignoreLongPress = false;
   }
 
-  delay(5);
   webSocket.loop();
 }
 
