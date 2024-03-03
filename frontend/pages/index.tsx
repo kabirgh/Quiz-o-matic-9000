@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, Fragment } from "react";
+import { useEffect, useRef, useState, Fragment, useCallback } from "react";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
@@ -19,13 +19,6 @@ import { EventsOn } from "../wailsjs/wailsjs/runtime/runtime";
 type Color = main.Color;
 const Color = main.Color;
 
-const BUZZER_ID_TO_NAME: { [key: string]: string } = {
-  "11": "White",
-  "12": "Orange",
-  "13": "Black",
-  "14": "Purple",
-};
-
 const Main: NextPage = () => {
   const MAX_TEAMS = 8;
   const router = useRouter();
@@ -45,6 +38,29 @@ const Main: NextPage = () => {
         timestamp: number;
       };
     }
+  );
+
+  const handleBuzzerPress = useCallback(
+    (buzzerId: string) => {
+      // Clear existing timeout if there is one
+      if (pressedBuzzers[buzzerId]) {
+        clearTimeout(pressedBuzzers[buzzerId].timeout);
+      }
+      // Set new timeout to remove buzzer from pressed state after some time
+      const timeout = setTimeout(() => {
+        setPressedBuzzers((current) => {
+          const updated = { ...current };
+          delete updated[buzzerId];
+          return updated;
+        });
+      }, 1000);
+      // Update state with new timeout
+      setPressedBuzzers((prev) => ({
+        ...prev,
+        [buzzerId]: { timeout, timestamp: Date.now() },
+      }));
+    },
+    [pressedBuzzers]
   );
 
   // Get teams from backend
@@ -89,32 +105,17 @@ const Main: NextPage = () => {
 
   // Listen for buzzer presses
   useEffect(() => {
-    const cancel = EventsOn("press", (id: string) => {});
+    const cancel = EventsOn("press", (id: string) => {
+      handleBuzzerPress(id);
+    });
     return cancel;
-  }, []);
+  }, [handleBuzzerPress]);
 
   useEffect(() => {
-    const buzzerId = "Keyboard";
     const keydownHandler = (event: any) => {
       switch (event.code) {
         case "Space":
-          // Clear existing timeout if there is one
-          if (pressedBuzzers[buzzerId]) {
-            clearTimeout(pressedBuzzers[buzzerId].timeout);
-          }
-          // Set new timeout to remove buzzer from pressed state after some time
-          const timeout = setTimeout(() => {
-            setPressedBuzzers((current) => {
-              const updated = { ...current };
-              delete updated[buzzerId];
-              return updated;
-            });
-          }, 1000);
-          // Update state with new timeout
-          setPressedBuzzers((prev) => ({
-            ...prev,
-            [buzzerId]: { timeout, timestamp: Date.now() },
-          }));
+          handleBuzzerPress("Keyboard");
           break;
       }
     };
@@ -122,12 +123,8 @@ const Main: NextPage = () => {
     addEventListener("keydown", keydownHandler);
     return () => {
       removeEventListener("keydown", keydownHandler);
-      // Clear all timeouts when component unmounts
-      Object.values(pressedBuzzers).forEach(({ timeout }) =>
-        clearTimeout(timeout)
-      );
     };
-  }, [pressedBuzzers]);
+  }, [handleBuzzerPress]);
 
   const getNextUnusedColor = (): Color => {
     const color = Object.values(Color).filter(
@@ -260,7 +257,7 @@ const Main: NextPage = () => {
                       buzzerId !== "None"
                     }
                   >
-                    {BUZZER_ID_TO_NAME[buzzerId] || buzzerId}
+                    {buzzerId}
                   </option>
                 );
               })}
@@ -323,7 +320,7 @@ const Main: NextPage = () => {
                 : "none",
             }}
           >
-            {BUZZER_ID_TO_NAME[buzzerId] || buzzerId}
+            {buzzerId}
           </div>
         );
       })}
