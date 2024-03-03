@@ -2,11 +2,8 @@ package main
 
 import (
 	"context"
-	"errors"
 	"net"
 	"net/http"
-	"slices"
-	"strings"
 	"sync"
 	"time"
 
@@ -27,18 +24,17 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func (a *App) getBuzzerIdFromConn(conn *websocket.Conn) (string, error) {
-	for _, buzzer := range a.buzzers {
-		if buzzer.Conn == conn {
-			return buzzer.Id, nil
-		}
-	}
+func (a *App) registerBuzzer(buzzerId string, conn *websocket.Conn) {
+	runtime.LogInfof(a.ctx, "Registering buzzer %s", buzzerId)
+	a.buzzersMutex.Lock()
+	a.buzzers = append(a.buzzers, Buzzer{Id: buzzerId, Conn: conn})
+	a.buzzersMutex.Unlock()
 
-	return "", errors.New("Buzzer not found")
+	runtime.EventsEmit(a.ctx, "connect", buzzerId)
 }
 
 func (a *App) unregisterBuzzer(buzzerId string) {
-	// Remove buzzer
+	runtime.LogInfof(a.ctx, "Unregistering buzzer %s", buzzerId)
 	newBuzzers := []Buzzer{}
 	for _, buzzer := range a.buzzers {
 		if buzzer.Id != buzzerId {
@@ -53,64 +49,53 @@ func (a *App) unregisterBuzzer(buzzerId string) {
 }
 
 func (a *App) buzzerHandler(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	buzzerId := queryParams.Get("id")
+
+	runtime.LogInfof(a.ctx, "Buzzer %s connected", buzzerId)
+
+	if buzzerId == "" {
+		runtime.LogErrorf(a.ctx, "No buzzer ID provided. Rejecting connection")
+		return
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		runtime.LogInfof(a.ctx, "Upgrade error: %v", err)
+		runtime.LogInfof(a.ctx, "Websocket upgrade error: %v", err)
 		return
 	}
 	defer conn.Close()
 
-	go a.checkForDisconnection(conn)
+	a.registerBuzzer(buzzerId, conn)
+	// Set 0 deadline to prevent read from blocking for initial connection
+	// checkForDisconnection will update the deadline
+	conn.SetReadDeadline(time.Time{})
+	go a.checkForDisconnection(buzzerId, conn)
 
 	for {
 		_, message, err := conn.ReadMessage()
+
+		// err might occur if read deadline is exceeded from checkForDisconnection code
 		if err != nil {
-			runtime.LogInfof(a.ctx, "Read error: %v", err)
-
-			bId, err := a.getBuzzerIdFromConn(conn)
-			if err != nil {
-				runtime.LogErrorf(a.ctx, "Buzzer not found: %v", err)
-				break
-			}
-
-			runtime.LogInfof(a.ctx, "%s disconnected", bId)
-			a.unregisterBuzzer(bId)
-			break
-		}
-
-		buzzerData := strings.Split(string(message), ",")
-		if len(buzzerData) != 2 {
-			runtime.LogErrorf(a.ctx, "Invalid message: %s", message)
+			runtime.LogInfof(a.ctx, "Read error: %v. Unregistering buzzer %s", err, buzzerId)
+			a.unregisterBuzzer(buzzerId)
 			continue
 		}
 
-		buzzerId := buzzerData[0]
-		action := buzzerData[1]
+		msg := string(message)
 
-		switch action {
-		case Connect:
-			runtime.LogInfof(a.ctx, "Buzzer %s connected", buzzerId)
-			// Don't add the buzzer ID if it's already in the list
-			buzzerIds := a.ListBuzzerIds()
-			if slices.Contains(buzzerIds, buzzerId) {
-				continue
-			}
-			a.buzzersMutex.Lock()
-			a.buzzers = append(a.buzzers, Buzzer{Id: buzzerId, Conn: conn})
-			a.buzzersMutex.Unlock()
-			runtime.EventsEmit(a.ctx, "connect", buzzerId)
-		case Press:
-			runtime.LogInfof(a.ctx, "Buzzer %s pressed", buzzerId)
-			runtime.EventsEmit(a.ctx, "press", buzzerId)
-		default:
-			runtime.LogWarningf(a.ctx, "Buzzer %s sent invalid action %s.", buzzerId, action)
+		if msg != "1" {
+			runtime.LogWarningf(a.ctx, "Buzzer %s sent unexpected message: %s", buzzerId, msg)
 		}
+
+		runtime.LogInfof(a.ctx, "Buzzer %s pressed", buzzerId)
+		runtime.EventsEmit(a.ctx, "press", buzzerId)
 	}
 }
 
 // Check for disconnections with ping/pong
-func (a *App) checkForDisconnection(conn *websocket.Conn) {
-	pongWait := 2 * time.Second
+func (a *App) checkForDisconnection(buzzerId string, conn *websocket.Conn) {
+	pongWait := 5 * time.Second
 	pingPeriod := (pongWait * 9) / 10
 
 	// Set the pong handler to update the read deadline upon receiving a pong
@@ -126,13 +111,8 @@ func (a *App) checkForDisconnection(conn *websocket.Conn) {
 		defer ticker.Stop()
 		for range ticker.C {
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				buzzerId, getErr := a.getBuzzerIdFromConn(conn)
-				if getErr != nil {
-					runtime.LogErrorf(a.ctx, "Could not get buzzerId from conn: %v", getErr)
-					return
-				}
-
-				runtime.LogErrorf(a.ctx, "Ping write to buzzer %s failed: %s", buzzerId, err)
+				runtime.LogErrorf(a.ctx, "Ping write to buzzer %s failed: %s. Unregistering buzzer", buzzerId, err)
+				a.unregisterBuzzer(buzzerId)
 				return // End the goroutine if we cannot send a ping
 			}
 		}

@@ -3,12 +3,12 @@
 #include <WebSocketsClient.h>
 #include <Ticker.h>
 
-#define DEVICE_ID "11"
+#define DEVICE_ID "Purple"
 
 // Set DEBUG to 0 for production code (disables communication over serial port).
 #define DEBUG 0
 
-#ifdef DEBUG
+#if DEBUG
 #define SERIAL_BEGIN(x) Serial.begin(x)
 #define SERIAL_SET_DEBUG(x) Serial.setDebugOutput(x)
 #define PRINT(x) Serial.print(x)
@@ -32,7 +32,7 @@
 #define RELEASED HIGH
 
 // Wifi AP information
-const int DEBOUNCE_DELAY = 30;
+const int DEBOUNCE_DELAY = 40;
 const char *ssid = "qom";
 const char *password = "esp8266button";
 WiFiUDP Udp;
@@ -50,7 +50,7 @@ unsigned long ping();
 
 void setup()
 {
-  char wsServerIp[20];
+  char wsServerIp[31];
   uint16_t wsPort;
 
   pinMode(BUTTON, INPUT_PULLUP);
@@ -69,27 +69,22 @@ void setup()
 
 void loop()
 {
-  static unsigned long debounceStartTime = 0; // Timestamp of the last debounce check
-  static int prevButtonState = RELEASED;      // Previous state of the button
+  static int prevButtonState = RELEASED;
 
-  int reading = digitalRead(BUTTON);      // Current state of the button
-  unsigned long currentMillis = millis(); // Current time
+  int reading = digitalRead(BUTTON);
 
-  // Check if button state has changed
+  // Check for button state change
+  // Don't bother debouncing, this is a quiz buzzer. Program handles multiple presses in quick succession.
   if (reading != prevButtonState)
   {
-    debounceStartTime = currentMillis; // Reset debounce timer
-    prevButtonState = reading;         // Update previous button state
-  }
-  // Button state not changed and debounce delay has passed
-  else if ((currentMillis - debounceStartTime) > DEBOUNCE_DELAY)
-  {
+    prevButtonState = reading;
     if (reading == PRESSED)
     {
       sendClick();
     }
   }
 
+  delay(5); // just in case
   webSocket.loop();
 }
 
@@ -133,8 +128,8 @@ void listenForUdpMulticast(char *wsServerIpBuf, uint16_t *wsPort)
     delay(10); // Let ESP8266 service wifi etc. and avoid soft reset
   }
 
-  const char *remoteIp = Udp.remoteIP().toString().c_str();
-  PRINTF("Received %d bytes from IP address %s, port %d\n", packetSize, remoteIp, Udp.remotePort());
+  IPAddress remoteIp = Udp.remoteIP();
+  PRINTF("Received %d bytes from IP address %s, port %d\n", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
   int len = Udp.read(incomingPacket, 31);
   if (len > 0)
   {
@@ -142,14 +137,18 @@ void listenForUdpMulticast(char *wsServerIpBuf, uint16_t *wsPort)
   }
   PRINTF("UDP packet contents: %s\n", incomingPacket);
 
-  sprintf(wsServerIpBuf, "%s", remoteIp);               // Write IP address of sender into buffer
-  *wsPort = (uint16_t)strtol(incomingPacket, NULL, 10); // Write contents of packet as port number, base 10
+  sprintf(wsServerIpBuf, "%s", remoteIp.toString().c_str()); // Write IP address of sender into buffer
+  *wsPort = (uint16_t)strtol(incomingPacket, NULL, 10);      // Write contents of packet as port number, base 10
 }
 
 void startWebSocket(char *wsServerIp, uint16_t wsPort)
 {
-  PRINTF("Opening websocket to ws://%s:%u/\n", wsServerIp, wsPort);
-  webSocket.begin(wsServerIp, wsPort, "/");
+  PRINTF("Opening websocket to ws://%s:%u/?id=%s\n", wsServerIp, wsPort, DEVICE_ID);
+  char url[50];
+  // Send device id as query parameter
+  sprintf(url, "/?id=%s", DEVICE_ID);
+
+  webSocket.begin(wsServerIp, wsPort, url);
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
 }
@@ -169,18 +168,9 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
     PRINTF("[Ws] Connected to url: %s\n", payload);
     ledTimer.detach(); // Stop blinking to indicate connection finished and buzzer can be registered
     digitalWrite(LED, OFF);
-    // pingSendTime = ping();
     break;
   case WStype_TEXT:
-    msgReceivedTime = millis();
-    if (strcmp((const char *)payload, "pong") == 0)
-    { // If msg is reply to ping
-      PRINTF("[Ws] Roundtrip latency: %u\n", msgReceivedTime - pingSendTime);
-    }
-    else
-    {
-      PRINTF("[Ws] Received text: %s\n", payload);
-    }
+    PRINTF("[Ws] Received text: %s\n", payload);
     break;
   case WStype_BIN:
     PRINTF("[Ws] Received binary, length: %u\n", length);
@@ -189,20 +179,9 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
   }
 }
 
-void registerBuzzer()
-{
-  webSocket.sendTXT(DEVICE_ID ",0");
-  PRINTLN("Sent register message.");
-}
-
 void sendClick()
 {
-  webSocket.sendTXT(DEVICE_ID ",1");
-  PRINTLN("Sent click message.");
-}
-
-unsigned long ping()
-{
-  webSocket.sendTXT(DEVICE_ID ",2");
-  return millis();
+  static int number = 1;
+  webSocket.sendTXT("1");
+  PRINTF("Sent click message %d\n", number++);
 }
