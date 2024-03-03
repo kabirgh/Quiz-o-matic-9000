@@ -13,7 +13,10 @@ import {
   ListBuzzerIds,
 } from "../wailsjs/wailsjs/go/main/App";
 import { main } from "../wailsjs/wailsjs/go/models";
-import { EventsOn } from "../wailsjs/wailsjs/runtime/runtime";
+import {
+  EventsOn,
+  WindowUnfullscreen,
+} from "../wailsjs/wailsjs/runtime/runtime";
 
 // Typescript will figure out whether to use enum as type or as value
 type Color = main.Color;
@@ -62,6 +65,11 @@ const Main: NextPage = () => {
     },
     [pressedBuzzers]
   );
+
+  useEffect(() => {
+    // Unfullscreen window when getting back from game window
+    WindowUnfullscreen();
+  }, []);
 
   // Get teams from backend
   useEffect(() => {

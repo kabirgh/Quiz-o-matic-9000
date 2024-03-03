@@ -7,7 +7,7 @@ import useClientRect from "../lib/useClientRect";
 
 import { ListTeams } from "../wailsjs/wailsjs/go/main/App";
 import { main } from "../wailsjs/wailsjs/go/models";
-import { EventsOn } from "../wailsjs/wailsjs/runtime/runtime";
+import { EventsOn, WindowFullscreen } from "../wailsjs/wailsjs/runtime/runtime";
 
 type Team = main.Team;
 
@@ -17,6 +17,11 @@ const Game: NextPage = () => {
   const [played, setPlayed] = useState([] as Team[]);
   const teamRowRef = useRef<HTMLElement>(null);
   const rect = useClientRect(teamRowRef);
+
+  useEffect(() => {
+    // Fullscreen window
+    WindowFullscreen();
+  }, []);
 
   // Get teams from backend
   useEffect(() => {
