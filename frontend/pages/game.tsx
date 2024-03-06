@@ -8,7 +8,11 @@ import { perceptualToAmplitude } from "../lib/perceptual";
 
 import { ListTeams } from "../wailsjs/wailsjs/go/main/App";
 import { main } from "../wailsjs/wailsjs/go/models";
-import { EventsOn, WindowFullscreen } from "../wailsjs/wailsjs/runtime/runtime";
+import {
+  EventsOn,
+  WindowFullscreen,
+  WindowUnfullscreen,
+} from "../wailsjs/wailsjs/runtime/runtime";
 
 type Team = main.Team;
 
@@ -16,6 +20,7 @@ const VOLUME_STEP = 0.1;
 
 const Game: NextPage = () => {
   const router = useRouter();
+  const [fullscreen, setFullscreen] = useState(true);
   const [teams, setTeams] = useState([] as Team[]);
   const [played, setPlayed] = useState([] as Team[]);
   const [volume, setVolume] = useState(0.5);
@@ -51,8 +56,12 @@ const Game: NextPage = () => {
 
   useEffect(() => {
     // Fullscreen window
-    WindowFullscreen();
-  }, []);
+    if (fullscreen) {
+      WindowFullscreen();
+    } else {
+      WindowUnfullscreen();
+    }
+  }, [fullscreen]);
 
   // Get teams from backend
   useEffect(() => {
@@ -75,6 +84,9 @@ const Game: NextPage = () => {
   useEffect(() => {
     const keydownHandler = (event: any) => {
       switch (event.code) {
+        case "KeyF":
+          setFullscreen((prev) => !prev);
+          break;
         case "KeyR":
           setPlayed([]);
           break;
