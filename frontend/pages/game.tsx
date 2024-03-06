@@ -1,9 +1,10 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import useClientRect from "../lib/useClientRect";
+import { perceptualToAmplitude } from "../lib/perceptual";
 
 import { ListTeams } from "../wailsjs/wailsjs/go/main/App";
 import { main } from "../wailsjs/wailsjs/go/models";
@@ -11,12 +12,42 @@ import { EventsOn, WindowFullscreen } from "../wailsjs/wailsjs/runtime/runtime";
 
 type Team = main.Team;
 
+const VOLUME_STEP = 0.1;
+
 const Game: NextPage = () => {
   const router = useRouter();
   const [teams, setTeams] = useState([] as Team[]);
   const [played, setPlayed] = useState([] as Team[]);
+  const [volume, setVolume] = useState(0.5);
   const teamRowRef = useRef<HTMLElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const rect = useClientRect(teamRowRef);
+
+  // Update UI and play sound when a team presses the buzzer
+  const handleTeamBuzzerPress = useCallback(
+    (teamId: string) => {
+      const team = teams.find((team) => team.buzzerId === teamId);
+      if (!team) {
+        return;
+      }
+      setPlayed((prev) => {
+        if (prev.includes(team)) {
+          return prev;
+        }
+        const newPlayed = [...prev, team];
+
+        if (!audioRef.current) {
+          return prev;
+        }
+        audioRef.current.pause(); // Pause the currently playing sound
+        audioRef.current.currentTime = 0; // Reset playback to the start
+        audioRef.current.play(); // Play the sound again
+
+        return newPlayed;
+      });
+    },
+    [teams]
+  );
 
   useEffect(() => {
     // Fullscreen window
@@ -35,17 +66,10 @@ const Game: NextPage = () => {
   // Listen to buzzer presses
   useEffect(() => {
     const cancel = EventsOn("press", (id: string) => {
-      const team = teams.find((team) => team.buzzerId === id);
-      if (team) {
-        setPlayed((prev) => {
-          if (prev.includes(team)) return prev;
-          return [...prev, team];
-        });
-      }
+      handleTeamBuzzerPress(id);
     });
-
     return cancel;
-  }, [teams]);
+  }, [handleTeamBuzzerPress]);
 
   // For testing and going back to home screen
   useEffect(() => {
@@ -61,14 +85,14 @@ const Game: NextPage = () => {
           setPlayed([]);
           router.push("/");
           break;
+        case "ArrowUp":
+          setVolume((prev) => Math.min(prev + VOLUME_STEP, 1));
+          break;
+        case "ArrowDown":
+          setVolume((prev) => Math.max(prev - VOLUME_STEP, 0));
+          break;
         case "Space":
-          const team = teams.find((team) => team.buzzerId === "Keyboard");
-          if (team) {
-            setPlayed((prev) => {
-              if (prev.includes(team)) return prev;
-              return [...prev, team];
-            });
-          }
+          handleTeamBuzzerPress("Keyboard");
           break;
       }
     };
@@ -77,7 +101,15 @@ const Game: NextPage = () => {
     return () => {
       removeEventListener("keydown", keydownHandler);
     };
-  }, [router, teams]);
+  }, [router, teams, handleTeamBuzzerPress]);
+
+  // Update volume of hidden audio element
+  useEffect(() => {
+    if (!audioRef.current) {
+      return;
+    }
+    audioRef.current.volume = perceptualToAmplitude(volume);
+  }, [volume]);
 
   const rowSize = 100.0 / teams.length;
   const cardSize = 0.9 * rowSize;
@@ -126,6 +158,11 @@ const Game: NextPage = () => {
         ref={teamRowRef as any}
         style={{ gridArea: `2/3/3/4`, height: "100%" }}
       ></div>
+      <audio
+        ref={audioRef}
+        src="/audio/bell.mp3"
+        style={{ display: "none" }}
+      ></audio>
     </div>
   );
 };
