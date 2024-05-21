@@ -1,40 +1,55 @@
-# Wails template Next.js
+# Quiz-o-matic
+Quiz-o-matic is a desktop application that lets you use game controllers as quiz buzzers. Up to 4 teams press a button any of the A/B/X/Y buttons to show up on the screen, in order. The application also supports [DIY buzzers](https://hackaday.io/project/158010-quiz-o-matic-wireless-buzzers).
 
-![GitHub](https://img.shields.io/github/license/LGiki/wails-template-nextjs?style=flat-square)
+If you're looking for the old version of this project that supported wireless mice as buzzers, you can find it in the `v1` branch.
 
-A [Wails](https://github.com/wailsapp/wails) template with [Next.js](https://github.com/vercel/next.js) and TypeScript.
+## Installation
+### Prerequisites
+- go 1.21+
+- NPM (Node 15+)
+- Windows OS (might work on Mac/Linux, but this is untested)
+- xinput game controllers
 
-You can develop applications using Next.js and then use Wails to package your application as a cross-platform program that is compatible with Linux, macOS and Windows. And you can easily call Go methods from JavaScript.
+### Building
+You will need to compile the program from source yourself:
 
-This project uses `next export` to export the Next.js application to static HTML, and then uses Wails to package the static files into a program, so some Next.js features are unsupported, see [https://nextjs.org/docs/advanced-features/static-html-export](https://nextjs.org/docs/advanced-features/static-html-export) for details.
+1. Clone the repository.
+2. Run `go install` in the root directory of the project.
+3. Run `npm install` in the `frontend` directory.
+4. Run `wails build` in the root directory of the project.
+5. Double-click `build/bin/Quiz-o-matic 9000.exe` to launch the program.
 
-# Screenshot
+## Usage
+### Main screen
 
-![](screenshot.png)
+![](https://zippy.gfycat.com/BlankOilyGreatdane.gif)
 
-# Getting Started
+This is the window that shows up when you start the application.
+On the main screen, you can:
+- Add, name, colour and remove teams
+- Assign controllers to teams
+- Assign [custom wireless buzzers](https://hackaday.io/project/158010-quiz-o-matic-wireless-buzzers) that communicate over websockets. If you won't use custom buzzers, you don't need to allow the program on Windows Firewall to the wireless network
 
-## Prerequisites
+When you're done, click the `Start` button to go to the game screen.
 
-- Go 1.17+
-- Node JS
-- NPM
-- [Wails CLI](https://wails.io/docs/next/gettingstarted/installation/)
+### Game screen
 
-## New Project
+![](https://zippy.gfycat.com/LegalDeliciousBustard.gif)
 
-You can create a new wails project using:
+The first team to buzz in by pressing any of the A/B/X/Y buttons will show up on a rectangle with their name and colour at the top of the screen. Teams that buzz afterwards will be shown below in descending order of how quickly they pressed. In the gif above, 'You're a quizzard, Harry' buzzed first. Further buzzes from the same device will have no effect until the screen is reset.
+To reset all teams from the screen, press `R` on your keyboard.
 
-```bash
-wails init -n "Your Project Name" -t https://github.com/LGiki/wails-template-nextjs
-```
+|Key|Function|
+|---|--------|
+|`Esc`|Quit the program|
+|`Backspace`|Return to main screen|
+|`F`|Enable/disable fullscreen|
+|`R`|Reset. Removes all teams from game screen in preparation for the next question|
+|`S`|Show all teams on game screen|
+|`Space`|Buzz in with the keyboard|
 
-## Building
+## Notes
+This program uses [Wails](https://wails.io) to create a cross-platform desktop application with Go and Next.js.
 
-If you modified the Go code, you need to run `wails generate module` to generate the wailsjs modules first. Then using `wails build` to build your application.
-
-You can run `wails build --help` or go to [https://wails.io/docs/next/reference/cli#build](https://wails.io/docs/next/reference/cli#build) to view all build flags.
-
-## Live Development
-
-To run in live development mode, run `wails dev` in the project directory.
+## Contributing
+Raise an issue on this repo if you encounter bugs or have any feature requests. Feel free to submit PRs too.

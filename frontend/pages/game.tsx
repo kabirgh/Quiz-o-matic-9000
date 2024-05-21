@@ -80,6 +80,20 @@ const Game: NextPage = () => {
     return cancel;
   }, [handleTeamBuzzerPress]);
 
+  // Reset played teams on right click
+  useEffect(() => {
+    const handleMouseDown = (event: any) => {
+      event.preventDefault(); // Prevents the default context menu
+      setPlayed([]);
+    };
+
+    document.addEventListener("contextmenu", handleMouseDown);
+
+    return () => {
+      document.removeEventListener("contextmenu", handleMouseDown);
+    };
+  }, []);
+
   // For testing and going back to home screen
   useEffect(() => {
     const keydownHandler = (event: any) => {
