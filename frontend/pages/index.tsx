@@ -15,6 +15,7 @@ import {
 import { main } from "../wailsjs/wailsjs/go/models";
 import {
   EventsOn,
+  WindowFullscreen,
   WindowUnfullscreen,
 } from "../wailsjs/wailsjs/runtime/runtime";
 
@@ -26,6 +27,7 @@ const Main: NextPage = () => {
   const MAX_TEAMS = 8;
   const router = useRouter();
 
+  const [fullscreen, setFullscreen] = useState(false);
   const [teams, setTeams] = useState([] as main.Team[]);
   const inputRowRef = useRef<HTMLElement>(null);
   const rect = useClientRect(inputRowRef);
@@ -67,9 +69,12 @@ const Main: NextPage = () => {
   );
 
   useEffect(() => {
-    // Unfullscreen window when getting back from game window
-    WindowUnfullscreen();
-  }, []);
+    if (fullscreen) {
+      WindowFullscreen();
+    } else {
+      WindowUnfullscreen();
+    }
+  }, [fullscreen]);
 
   // Get teams from backend
   useEffect(() => {
@@ -122,6 +127,9 @@ const Main: NextPage = () => {
   useEffect(() => {
     const keydownHandler = (event: any) => {
       switch (event.code) {
+        case "KeyF":
+          setFullscreen((prev) => !prev);
+          break;
         case "Space":
           handleBuzzerPress("Keyboard");
           break;
