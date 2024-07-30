@@ -1,23 +1,22 @@
-import { useEffect, useRef, useState, Fragment, useCallback } from "react";
-import type { NextPage } from "next";
-import { useRouter } from "next/router";
-import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
+import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
+import type { NextPage } from 'next';
+import { useRouter } from 'next/router';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 
-import useClientRect from "../lib/useClientRect";
-import ColorPicker from "../components/ColorPicker";
-import styles from "./index.module.css";
-
+import ColorPicker from '../components/ColorPicker';
+import useClientRect from '../lib/useClientRect';
 import {
-  SaveTeams,
-  ListTeams,
   ListBuzzerIds,
-} from "../wailsjs/wailsjs/go/main/App";
-import { main } from "../wailsjs/wailsjs/go/models";
+  ListTeams,
+  SaveTeams,
+} from '../wailsjs/wailsjs/go/main/App';
+import { main } from '../wailsjs/wailsjs/go/models';
 import {
   EventsOn,
   WindowFullscreen,
   WindowUnfullscreen,
-} from "../wailsjs/wailsjs/runtime/runtime";
+} from '../wailsjs/wailsjs/runtime/runtime';
+import styles from './index.module.css';
 
 // Typescript will figure out whether to use enum as type or as value
 type Color = main.Color;
@@ -32,7 +31,7 @@ const Main: NextPage = () => {
   const inputRowRef = useRef<HTMLElement>(null);
   const rect = useClientRect(inputRowRef);
   const [nameInputValid, setNameInputValid] = useState(
-    {} as { [key: number]: boolean }
+    {} as { [key: number]: boolean },
   );
   const [buzzerIds, setBuzzerIds] = useState([] as string[]);
   // buzzer id : timeout function
@@ -42,7 +41,7 @@ const Main: NextPage = () => {
         timeout: NodeJS.Timeout;
         timestamp: number;
       };
-    }
+    },
   );
 
   const handleBuzzerPress = useCallback(
@@ -65,7 +64,7 @@ const Main: NextPage = () => {
         [buzzerId]: { timeout, timestamp: Date.now() },
       }));
     },
-    [pressedBuzzers]
+    [pressedBuzzers],
   );
 
   useEffect(() => {
@@ -96,7 +95,7 @@ const Main: NextPage = () => {
       })
       .catch((err) => console.error(err));
 
-    const cancel = EventsOn("connect", (id: string) => {
+    const cancel = EventsOn('connect', (id: string) => {
       setBuzzerIds((prev) => {
         return Array.from(new Set([...prev, id]));
       });
@@ -107,7 +106,7 @@ const Main: NextPage = () => {
 
   // Listen for buzzer disconnections
   useEffect(() => {
-    const cancel = EventsOn("disconnect", (id: string) => {
+    const cancel = EventsOn('disconnect', (id: string) => {
       setBuzzerIds((prev) => {
         return prev.filter((buzzerId) => buzzerId !== id);
       });
@@ -118,7 +117,7 @@ const Main: NextPage = () => {
 
   // Listen for buzzer presses
   useEffect(() => {
-    const cancel = EventsOn("press", (id: string) => {
+    const cancel = EventsOn('press', (id: string) => {
       handleBuzzerPress(id);
     });
     return cancel;
@@ -127,24 +126,24 @@ const Main: NextPage = () => {
   useEffect(() => {
     const keydownHandler = (event: any) => {
       switch (event.code) {
-        case "KeyF":
+        case 'KeyF':
           setFullscreen((prev) => !prev);
           break;
-        case "Space":
-          handleBuzzerPress("Keyboard");
+        case 'Space':
+          handleBuzzerPress('Keyboard');
           break;
       }
     };
 
-    addEventListener("keydown", keydownHandler);
+    addEventListener('keydown', keydownHandler);
     return () => {
-      removeEventListener("keydown", keydownHandler);
+      removeEventListener('keydown', keydownHandler);
     };
-  }, [handleBuzzerPress]);
+  }, [handleBuzzerPress, router]);
 
   const getNextUnusedColor = (): Color => {
     const color = Object.values(Color).filter(
-      (c) => !teams.map((t) => t.color).includes(c)
+      (c) => !teams.map((t) => t.color).includes(c),
     )[0];
     return color;
   };
@@ -156,18 +155,18 @@ const Main: NextPage = () => {
         id="add-btn"
         style={{
           gridArea:
-            "row-add-start/col-del-add-start/row-add-end/col-del-add-end",
+            'row-add-start/col-del-add-start/row-add-end/col-del-add-end',
         }}
         onClick={() => {
           if (teams.length < MAX_TEAMS) {
             setTeams([
               ...teams,
-              { name: "", color: getNextUnusedColor(), buzzerId: undefined },
+              { name: '', color: getNextUnusedColor(), buzzerId: undefined },
             ]);
           }
         }}
       >
-        <PlusOutlined style={{ fontSize: "18px", color: "green" }} />
+        <PlusOutlined style={{ fontSize: '18px', color: 'green' }} />
       </button>
       {teams.map((team, index) => {
         const i = index + 1;
@@ -187,12 +186,12 @@ const Main: NextPage = () => {
                 // Recompute nameValidities since teams may have moved up a row
                 const newValid = {} as { [key: number]: boolean };
                 newTeams.forEach((team, index) => {
-                  newValid[index] = team.name.trim() === "" ? false : true;
+                  newValid[index] = team.name.trim() === '' ? false : true;
                 });
                 setNameInputValid(newValid);
               }}
             >
-              <MinusOutlined style={{ fontSize: "18px", color: "red" }} />
+              <MinusOutlined style={{ fontSize: '18px', color: 'red' }} />
             </button>
             <input
               id={`team-${i}-input`}
@@ -201,8 +200,8 @@ const Main: NextPage = () => {
                 gridArea: `${2 * i + 4}/col-teamname-start/${
                   2 * i + 5
                 }/col-teamname-end`,
-                outline: nameInputValid[index] === false ? "2px solid red" : "",
-                outlineOffset: "2px",
+                outline: nameInputValid[index] === false ? '2px solid red' : '',
+                outlineOffset: '2px',
               }}
               value={team.name}
               onChange={(event) => {
@@ -218,7 +217,7 @@ const Main: NextPage = () => {
               onBlur={(event) => {
                 const newValid = { ...nameInputValid };
                 newValid[index] =
-                  event.target.value.trim() === "" ? false : true;
+                  event.target.value.trim() === '' ? false : true;
                 setNameInputValid(newValid);
               }}
             />
@@ -227,9 +226,9 @@ const Main: NextPage = () => {
                 gridArea: `${2 * i + 4}/col-colorsel-start/${
                   2 * i + 5
                 }/col-colorsel-end`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               <ColorPicker
@@ -257,9 +256,9 @@ const Main: NextPage = () => {
                 newTeams[index].buzzerId = buzzerId;
                 setTeams(newTeams);
               }}
-              value={team.buzzerId || "None"}
+              value={team.buzzerId || 'None'}
             >
-              {buzzerIds.concat("None").map((buzzerId, buzzerIndex) => {
+              {buzzerIds.concat('None').map((buzzerId, buzzerIndex) => {
                 const selectedBuzzerIds = teams
                   .filter((_t, idx) => idx != index)
                   .map((t) => t.buzzerId);
@@ -270,7 +269,7 @@ const Main: NextPage = () => {
                     value={buzzerId}
                     disabled={
                       selectedBuzzerIds.includes(buzzerId) &&
-                      buzzerId !== "None"
+                      buzzerId !== 'None'
                     }
                   >
                     {buzzerId}
@@ -285,24 +284,24 @@ const Main: NextPage = () => {
       <div
         id="vert-divider"
         style={{
-          gridArea: "row-add-start/col-divider/21/col-divider",
-          backgroundColor: "rgba(255, 255, 255, 0.8)",
-          width: "1px",
-          boxShadow: "0px 0px 1px 1px rgba(255, 255, 255, 0.2)",
+          gridArea: 'row-add-start/col-divider/21/col-divider',
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          width: '1px',
+          boxShadow: '0px 0px 1px 1px rgba(255, 255, 255, 0.2)',
         }}
       ></div>
 
       <div
         id="buzzer-list-title"
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-          fontFamily: "Arvo",
-          fontSize: "3vh",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontFamily: 'Arvo',
+          fontSize: '3vh',
           gridArea:
-            "row-add-start/col-buzzers-start/row-add-end/col-buzzers-start",
+            'row-add-start/col-buzzers-start/row-add-end/col-buzzers-start',
         }}
       >
         Connected
@@ -314,7 +313,7 @@ const Main: NextPage = () => {
         const key = isPressed
           ? `${buzzerId}-${i}-${pressedBuzzers[buzzerId].timestamp}`
           : `${buzzerId}-${i}`;
-        const className = isPressed ? styles.glowingText : "";
+        const className = isPressed ? styles.glowingText : '';
 
         return (
           <div
@@ -322,18 +321,18 @@ const Main: NextPage = () => {
             key={key}
             className={className}
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "white",
-              fontFamily: "Arvo",
-              fontSize: "2vh",
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontFamily: 'Arvo',
+              fontSize: '2vh',
               gridArea: `${2 * i + 4}/col-buzzers-start/${
                 2 * i + 5
               }/col-buzzers-end`,
               textShadow: isPressed
-                ? "0 0 10px white, 0 0 20px white, 0 0 30px white, 0 0 40px white"
-                : "none",
+                ? '0 0 10px white, 0 0 20px white, 0 0 30px white, 0 0 40px white'
+                : 'none',
             }}
           >
             {buzzerId}
@@ -344,15 +343,15 @@ const Main: NextPage = () => {
       <div
         id="div-only-for-ref"
         ref={inputRowRef as any}
-        style={{ gridArea: `6/10/6/11`, height: "100%" }}
+        style={{ gridArea: `6/10/6/11`, height: '100%' }}
       ></div>
 
       <button
         id="start-btn"
-        style={{ gridArea: "22/col-startbtn-start/23/col-startbtn-end" }}
+        style={{ gridArea: '22/col-startbtn-start/23/col-startbtn-end' }}
         onClick={() => {
           const nameValidities = teams.map((t) => {
-            return t !== null && t.name.trim() === "" ? false : true;
+            return t !== null && t.name.trim() === '' ? false : true;
           });
           if (!nameValidities.every((v) => v === true)) {
             setNameInputValid(Object.assign({}, nameValidities));
@@ -361,15 +360,15 @@ const Main: NextPage = () => {
 
           const anyNoneBuzzers = teams
             .map((t) => t.buzzerId)
-            .filter((b) => b == "None" || b == undefined);
+            .filter((b) => b == 'None' || b == undefined);
           if (anyNoneBuzzers.length > 0) {
-            alert("All teams must have a buzzer");
+            alert('All teams must have a buzzer');
             return;
           }
 
           SaveTeams(teams);
 
-          router.push("/game");
+          router.push('/game');
         }}
       >
         Start

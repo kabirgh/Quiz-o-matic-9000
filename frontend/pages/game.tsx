@@ -1,18 +1,16 @@
-import type { NextPage } from "next";
-import { useRouter } from "next/router";
+import type { NextPage } from 'next';
+import { useRouter } from 'next/router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { useCallback, useEffect, useRef, useState } from "react";
-
-import useClientRect from "../lib/useClientRect";
-import { perceptualToAmplitude } from "../lib/perceptual";
-
-import { ListTeams } from "../wailsjs/wailsjs/go/main/App";
-import { main } from "../wailsjs/wailsjs/go/models";
+import { perceptualToAmplitude } from '../lib/perceptual';
+import useClientRect from '../lib/useClientRect';
+import { ListTeams } from '../wailsjs/wailsjs/go/main/App';
+import { main } from '../wailsjs/wailsjs/go/models';
 import {
   EventsOn,
   WindowFullscreen,
   WindowUnfullscreen,
-} from "../wailsjs/wailsjs/runtime/runtime";
+} from '../wailsjs/wailsjs/runtime/runtime';
 
 type Team = main.Team;
 
@@ -51,7 +49,7 @@ const Game: NextPage = () => {
         return newPlayed;
       });
     },
-    [teams]
+    [teams],
   );
 
   useEffect(() => {
@@ -74,7 +72,7 @@ const Game: NextPage = () => {
 
   // Listen to buzzer presses
   useEffect(() => {
-    const cancel = EventsOn("press", (id: string) => {
+    const cancel = EventsOn('press', (id: string) => {
       handleTeamBuzzerPress(id);
     });
     return cancel;
@@ -87,10 +85,10 @@ const Game: NextPage = () => {
       setPlayed([]);
     };
 
-    document.addEventListener("contextmenu", handleMouseDown);
+    document.addEventListener('contextmenu', handleMouseDown);
 
     return () => {
-      document.removeEventListener("contextmenu", handleMouseDown);
+      document.removeEventListener('contextmenu', handleMouseDown);
     };
   }, []);
 
@@ -98,34 +96,34 @@ const Game: NextPage = () => {
   useEffect(() => {
     const keydownHandler = (event: any) => {
       switch (event.code) {
-        case "KeyF":
+        case 'KeyF':
           setFullscreen((prev) => !prev);
           break;
-        case "KeyR":
+        case 'KeyR':
           setPlayed([]);
           break;
-        case "KeyS":
+        case 'KeyS':
           setPlayed(teams);
           break;
-        case "Backspace":
+        case 'Backspace':
           setPlayed([]);
-          router.push("/");
+          router.push('/');
           break;
-        case "ArrowUp":
+        case 'ArrowUp':
           setVolume((prev) => Math.min(prev + VOLUME_STEP, 1));
           break;
-        case "ArrowDown":
+        case 'ArrowDown':
           setVolume((prev) => Math.max(prev - VOLUME_STEP, 0));
           break;
-        case "Space":
-          handleTeamBuzzerPress("Keyboard");
+        case 'Space':
+          handleTeamBuzzerPress('Keyboard');
           break;
       }
     };
 
-    addEventListener("keydown", keydownHandler);
+    addEventListener('keydown', keydownHandler);
     return () => {
-      removeEventListener("keydown", keydownHandler);
+      removeEventListener('keydown', keydownHandler);
     };
   }, [router, teams, handleTeamBuzzerPress]);
 
@@ -144,15 +142,15 @@ const Game: NextPage = () => {
   return (
     <div
       style={{
-        fontFamily: "Arvo",
-        backgroundColor: "#323232",
-        height: "100vh",
-        width: "100vw",
-        display: "grid",
-        gridTemplateColumns: "1fr 8fr 1fr",
+        fontFamily: 'Arvo',
+        backgroundColor: '#323232',
+        height: '100vh',
+        width: '100vw',
+        display: 'grid',
+        gridTemplateColumns: '1fr 8fr 1fr',
         gridTemplateRows: `${spacerSize}fr ${teams
           .map((_team) => `${cardSize}fr ${spacerSize}fr`)
-          .join(" ")}`,
+          .join(' ')}`,
       }}
     >
       {played.map((team, index) => {
@@ -167,10 +165,10 @@ const Game: NextPage = () => {
             style={{
               gridArea: `${2 * i} / 2 / ${2 * i + 1} / 3`,
               backgroundColor: `${team.color}`,
-              color: "black",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
+              color: 'black',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
               fontSize: rect === null ? 0 : 0.25 * rect.height,
             }}
           >
@@ -182,12 +180,12 @@ const Game: NextPage = () => {
       <div
         id="div-only-for-ref"
         ref={teamRowRef as any}
-        style={{ gridArea: `2/3/3/4`, height: "100%" }}
+        style={{ gridArea: `2/3/3/4`, height: '100%' }}
       ></div>
       <audio
         ref={audioRef}
         src="/audio/bell.mp3"
-        style={{ display: "none" }}
+        style={{ display: 'none' }}
       ></audio>
     </div>
   );
