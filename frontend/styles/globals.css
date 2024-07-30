@@ -1,3 +1,11 @@
+/* https://ant.design/docs/react/compatible-style#tailwindcss-arrange-layer */
+@layer tailwind-base, antd;
+@layer tailwind-base {
+  @tailwind base;
+}
+@tailwind components;
+@tailwind utilities;
+
 @font-face {
   font-family: "Arvo";
   src: local(""), url("/fonts/Arvo-Regular.ttf") format("truetype");
