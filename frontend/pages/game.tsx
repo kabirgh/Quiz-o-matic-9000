@@ -1,6 +1,6 @@
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { perceptualToAmplitude } from '../lib/perceptual';
 import useClientRect from '../lib/useClientRect';
@@ -135,9 +135,9 @@ const Game: NextPage = () => {
     audioRef.current.volume = perceptualToAmplitude(volume);
   }, [volume]);
 
-  const rowSize = 100.0 / teams.length;
-  const cardSize = 0.9 * rowSize;
-  const spacerSize = 0.1 * rowSize;
+  const rowSize = useMemo(() => 100.0 / teams.length, [teams]);
+  const cardSize = useMemo(() => 0.9 * rowSize, [rowSize]);
+  const spacerSize = useMemo(() => 0.1 * rowSize, [rowSize]);
 
   return (
     <div
