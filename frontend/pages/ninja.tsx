@@ -31,13 +31,13 @@ type GameScreenState = {
 //
 // Utils
 //
+// Mutates array in place
 const shuffle = (array: number[]): number[] => {
-  const a = structuredClone(array);
-  for (let i = a.length - 1; i > 0; i--) {
+  for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+    [array[i], array[j]] = [array[j], array[i]];
   }
-  return a;
+  return array;
 };
 
 //
@@ -50,9 +50,10 @@ const PlayerSprite = ({
   currentAnimation,
   currentFrame,
 }: Player) => {
-  const frameIndex = NINJA_ANIMATIONS[currentAnimation].frames[currentFrame];
+  const anim = ANIMATIONS[currentAnimation];
+  const frameIndex = anim.frames[currentFrame];
   const frameWidth = 72;
-  const frameHeight = 48;
+  const frameHeight = 72;
 
   return (
     <div
@@ -63,7 +64,7 @@ const PlayerSprite = ({
         width: frameWidth,
         height: frameHeight,
         imageRendering: 'pixelated',
-        backgroundImage: `url('sprites/runsheet.png')`,
+        backgroundImage: `url('${anim.url}')`,
         transform: `scaleY(-1)`,
         rotate: '-90deg',
         backgroundPosition: `-${frameIndex * frameWidth}px 0px`,
@@ -171,16 +172,19 @@ const DEFAULT_PLAYERS: Player[] = [
   },
 ];
 
-const NINJA_ANIMATIONS = {
+const ANIMATIONS = {
   run: {
-    url: 'sprites/run/runsheet2.png',
-    frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-    msPerFrame: 50,
+    url: 'sprites/runsheet.png',
+    frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    // empty space in front of sprite
+    hitboxes: [24, 12, 12, 24, 27, 27, 15, 12, 12, 24, 27, 30],
+    msPerFrame: 70,
   },
   jump: {
-    url: 'sprites/run/jumpsheet.png',
-    frames: [0, 1, 2, 3],
-    msPerFrame: 1000 / 10,
+    url: 'sprites/run/runsheet2.png',
+    frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    hitboxes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    msPerFrame: 70,
   },
 };
 
@@ -253,15 +257,25 @@ const NinjaRun: NextPage = () => {
   const updatePlayers = useCallback((deltaTime: number) => {
     const state = gameState.current;
     state.players = state.players.map((player) => {
+      if (player.isGameOver) {
+        return player;
+      }
+
       let newX = player.x + player.vx * deltaTime;
 
       // Check for collisions with obstacles
       const isColliding = player.obstacles.some((obstacle) => {
+        const yCollision =
+          player.y +
+          ANIMATIONS[player.currentAnimation].hitboxes[player.currentFrame];
+
         return (
           newX <= obstacle.x + OBSTACLE_SIZE &&
           newX + PLAYER_SIZE >= obstacle.x &&
-          player.y <= obstacle.y + OBSTACLE_SIZE &&
-          player.y + PLAYER_SIZE >= obstacle.y
+          // Since player is rotated, we need to check the y axis collision
+          // TODO: handle jumping player
+          yCollision <= obstacle.y + OBSTACLE_SIZE &&
+          yCollision + PLAYER_SIZE >= obstacle.y
         );
       });
       if (isColliding) {
@@ -271,12 +285,12 @@ const NinjaRun: NextPage = () => {
       // Update animation frame
       if (
         player.lastFrameUpdate +
-          NINJA_ANIMATIONS[player.currentAnimation].msPerFrame <
+          ANIMATIONS[player.currentAnimation].msPerFrame <
         Date.now()
       ) {
         const currentFrame =
           (player.currentFrame + 1) %
-          NINJA_ANIMATIONS[player.currentAnimation].frames.length;
+          ANIMATIONS[player.currentAnimation].frames.length;
 
         return {
           ...player,
