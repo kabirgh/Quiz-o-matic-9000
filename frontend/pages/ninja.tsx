@@ -28,6 +28,53 @@ type GameScreenState = {
   obstacles: Obstacle[];
 };
 
+class ObstaclePool {
+  private pool: Obstacle[] = [];
+  private activeObstacles: Obstacle[] = [];
+
+  constructor(initialSize: number) {
+    this.activeObstacles = [...DEFAULT_OBSTACLES];
+    for (let i = 0; i < initialSize - DEFAULT_OBSTACLES.length; i++) {
+      this.pool.push({ x: 0, y: 0 });
+    }
+  }
+
+  getObstacle(x: number, y: number): Obstacle {
+    let obstacle: Obstacle;
+    if (this.pool.length > 0) {
+      obstacle = this.pool.pop()!;
+    } else {
+      obstacle = { x: 0, y: 0 };
+    }
+    obstacle.x = x;
+    obstacle.y = y;
+    this.activeObstacles.push(obstacle);
+    return obstacle;
+  }
+
+  releaseObstacle(obstacle: Obstacle) {
+    const index = this.activeObstacles.indexOf(obstacle);
+    if (index > -1) {
+      this.activeObstacles.splice(index, 1);
+      this.pool.push(obstacle);
+    }
+  }
+
+  updateActiveObstacles(deltaTime: number, speed: number) {
+    for (let i = this.activeObstacles.length - 1; i >= 0; i--) {
+      const obstacle = this.activeObstacles[i];
+      obstacle.y += speed * deltaTime;
+      if (obstacle.y > GAME_HEIGHT) {
+        this.releaseObstacle(obstacle);
+      }
+    }
+  }
+
+  getActiveObstacles(): Obstacle[] {
+    return this.activeObstacles;
+  }
+}
+
 //
 // Utils
 //
@@ -196,7 +243,8 @@ const NinjaRun: NextPage = () => {
   const [, setRenderTrigger] = useState({});
   const gameState = useRef({
     players: DEFAULT_PLAYERS,
-    obstacles: DEFAULT_OBSTACLES,
+    // Same obstacles used for all players. player.obstacles is usually a reference to the list in the pool
+    obstaclePool: new ObstaclePool(20),
     speed: 0.1,
     speedLastUpdated: Date.now(),
     // Ensure we don't choose the same side for new obstacles too many times in a row
@@ -216,52 +264,55 @@ const NinjaRun: NextPage = () => {
   const updateObstacles = useCallback((deltaTime: number) => {
     const state = gameState.current;
 
-    // Modify the global obstacle state
-    const newObstacles = state.obstacles
-      // Move obstacles down the screen
-      .map((obstacle) => ({
-        ...obstacle,
-        y: obstacle.y + state.speed * deltaTime,
-      }))
-      // Keep only obstacles that are still on the screen
-      .filter((obstacle) => obstacle.y <= GAME_HEIGHT);
+    if (state.players.every((player) => player.isGameOver)) {
+      return;
+    }
+
+    state.obstaclePool.updateActiveObstacles(deltaTime, state.speed);
+    const activeObstacles = state.obstaclePool.getActiveObstacles();
 
     if (
-      newObstacles.length === 0 || // no obstacles on the screen
-      newObstacles[newObstacles.length - 1].y > OBSTACLE_MIN_GAP // lowest obstacle moved far enough
+      activeObstacles.length === 0 ||
+      activeObstacles[activeObstacles.length - 1].y > OBSTACLE_MIN_GAP
     ) {
-      // Spawn randomly on the left or right side of the screen
       const x = state.obstacleBag.pop()! * (GAME_WIDTH - OBSTACLE_SIZE);
       if (state.obstacleBag.length === 0) {
         state.obstacleBag = shuffle([...OBSTACLE_BAG_DEFAULT]);
       }
 
-      // Add a new obstacle
-      newObstacles.push({
-        x: x,
-        // Add some spacing jitter
-        y: -Math.random() * OBSTACLE_MIN_GAP * 0.6,
-      });
+      state.obstaclePool.getObstacle(
+        x,
+        -Math.random() * OBSTACLE_MIN_GAP * 0.6,
+      );
     }
 
-    state.obstacles = newObstacles;
-    // Copy obstacle state to player if they're still alive
-    state.players = state.players.map((player) => {
-      return player.isGameOver
-        ? player
-        : { ...player, obstacles: structuredClone(newObstacles) };
-    });
+    // Live players reference the same obstacles list to reduce memory allocations and GC pauses
+    for (const player of state.players) {
+      if (!player.isGameOver) {
+        player.obstacles = activeObstacles;
+      }
+    }
   }, []);
 
-  // Should be called every frame
   const updatePlayers = useCallback((deltaTime: number) => {
     const state = gameState.current;
-    state.players = state.players.map((player) => {
+
+    for (const player of state.players) {
       if (player.isGameOver) {
-        return player;
+        continue;
       }
 
+      // Calculate the new position
       let newX = player.x + player.vx * deltaTime;
+
+      // Check for collisions with left and right walls
+      if (newX < 0) {
+        newX = 0;
+        player.vx = 0; // Stop the player at the left wall
+      } else if (newX + PLAYER_SIZE > GAME_WIDTH) {
+        newX = GAME_WIDTH - PLAYER_SIZE;
+        player.vx = 0; // Stop the player at the right wall
+      }
 
       // Check for collisions with obstacles
       const isColliding = player.obstacles.some((obstacle) => {
@@ -272,15 +323,22 @@ const NinjaRun: NextPage = () => {
         return (
           newX <= obstacle.x + OBSTACLE_SIZE &&
           newX + PLAYER_SIZE >= obstacle.x &&
-          // Since player is rotated, we need to check the y axis collision
-          // TODO: handle jumping player
           yCollision <= obstacle.y + OBSTACLE_SIZE &&
           yCollision + PLAYER_SIZE >= obstacle.y
         );
       });
+
       if (isColliding) {
-        return { ...player, isGameOver: true };
+        // Copy a snapshot of the obstacles list
+        player.obstacles = structuredClone(
+          state.obstaclePool.getActiveObstacles(),
+        );
+        player.isGameOver = true;
+        continue;
       }
+
+      // Update player position
+      player.x = newX;
 
       // Update animation frame
       if (
@@ -292,25 +350,10 @@ const NinjaRun: NextPage = () => {
           (player.currentFrame + 1) %
           ANIMATIONS[player.currentAnimation].frames.length;
 
-        return {
-          ...player,
-          x: newX,
-          currentFrame,
-          lastFrameUpdate: Date.now(),
-        };
+        player.currentFrame = currentFrame;
+        player.lastFrameUpdate = Date.now();
       }
-
-      // If the player is not moving, don't update the position
-      if (player.vx === 0) return player;
-
-      // If the player is moving, update the position
-      if (newX <= 0 || newX >= GAME_WIDTH - PLAYER_SIZE) {
-        newX = Math.max(0, Math.min(GAME_WIDTH - PLAYER_SIZE, newX));
-        return { ...player, x: newX, vx: 0 };
-      }
-
-      return { ...player, x: newX };
-    });
+    }
   }, []);
 
   // On button press, change the player's direction
