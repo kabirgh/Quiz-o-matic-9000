@@ -129,6 +129,9 @@ const Main: NextPage = () => {
         case 'KeyF':
           setFullscreen((prev) => !prev);
           break;
+        case 'KeyN':
+          router.push('/ninja');
+          break;
         case 'Space':
           handleBuzzerPress('Keyboard');
           break;
