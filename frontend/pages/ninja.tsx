@@ -64,7 +64,7 @@ class ObstaclePool {
   updateActiveObstacles(deltaTime: number, speed: number) {
     for (let i = this.activeObstacles.length - 1; i >= 0; i--) {
       const obstacle = this.activeObstacles[i];
-      obstacle.y += speed * deltaTime;
+      obstacle.y = Math.round(obstacle.y + speed * deltaTime);
       if (obstacle.y > GAME_HEIGHT) {
         this.releaseObstacle(obstacle);
       }
@@ -172,8 +172,12 @@ const DEFAULT_OBSTACLES: Obstacle[] = [
   },
 ];
 
-// PLAYER_WIDTH == height of the sprite, which is rotated 90 degrees
+// PLAYER_WIDTH == width of the sprite character including empty space
+// Remember sprite is usually rotated 90 degrees
+// Hitbox calculations should use values in ANIMATIONS
 const PLAYER_WIDTH = 72;
+// For hitbox calculations, use the lowest height of the sprite
+const PLAYER_HEIGHT = 54;
 const PLAYER_VX = 1;
 
 const DEFAULT_PLAYERS: Player[] = [
@@ -232,8 +236,8 @@ const ANIMATIONS = {
     url: 'sprites/runsheet.png',
     frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
     // empty space in front of sprite
-    hitboxes: [24, 12, 12, 24, 27, 27, 15, 12, 12, 24, 27, 30],
-    msPerFrame: 70,
+    hitboxes: [24, 12, 12, 27, 33, 27, 24, 12, 12, 27, 27, 33],
+    msPerFrame: 60,
   },
   jump: {
     url: 'sprites/run/runsheet2.png',
@@ -320,7 +324,7 @@ const NinjaRun: NextPage = () => {
       }
 
       // Calculate the new position
-      let newX = player.x + player.vx * deltaTime;
+      let newX = Math.round(player.x + player.vx * deltaTime);
 
       // Check for collisions with left and right walls
       if (newX < 0) {
@@ -339,11 +343,21 @@ const NinjaRun: NextPage = () => {
           ANIMATIONS[player.currentAnimation].hitboxes[player.currentFrame];
 
         if (
-          newX <= obstacle.x + OBSTACLE_SIZE &&
-          newX + PLAYER_WIDTH >= obstacle.x &&
+          player.x <= obstacle.x + OBSTACLE_SIZE &&
+          player.x + PLAYER_HEIGHT >= obstacle.x &&
           yCollision <= obstacle.y + OBSTACLE_SIZE &&
           yCollision + PLAYER_WIDTH >= obstacle.y
         ) {
+          console.log('x:', player.x, 'y:', player.y);
+          console.log('obstacle', obstacle);
+          console.log(
+            'animation frame:',
+            player.currentFrame,
+            'hitbox:',
+            ANIMATIONS[player.currentAnimation].hitboxes[player.currentFrame],
+          );
+          console.log('yCollision:', yCollision);
+
           isColliding = true;
           break;
         }
