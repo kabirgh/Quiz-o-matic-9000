@@ -172,12 +172,9 @@ const DEFAULT_OBSTACLES: Obstacle[] = [
   },
 ];
 
-// PLAYER_WIDTH == width of the sprite character including empty space
-// Remember sprite is usually rotated 90 degrees
+// PLAYER_SIZE == width/height of the sprite character including empty space
 // Hitbox calculations should use values in ANIMATIONS
-const PLAYER_WIDTH = 72;
-// For hitbox calculations, use the lowest height of the sprite
-const PLAYER_HEIGHT = 54;
+const PLAYER_SIZE = 72;
 const PLAYER_VX = 1;
 
 const DEFAULT_PLAYERS: Player[] = [
@@ -236,13 +233,28 @@ const ANIMATIONS = {
     url: 'sprites/runsheet.png',
     frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
     // empty space in front of sprite
-    hitboxes: [24, 12, 12, 27, 33, 27, 24, 12, 12, 27, 27, 33],
+    // hitboxes: [24, 12, 12, 27, 33, 27, 24, 12, 12, 27, 27, 33],
+    hitboxes: [
+      // xb: xback, xf: xfront, yb: ybottom, yt: ytop
+      { xb: 21, xf: 24, yb: 0, yt: 6 },
+      { xb: 12, xf: 12, yb: 9, yt: 15 },
+      { xb: 15, xf: 12, yb: 0, yt: 15 },
+      { xb: 9, xf: 27, yb: 0, yt: 18 },
+      { xb: 12, xf: 33, yb: 0, yt: 15 },
+      { xb: 6, xf: 27, yb: 0, yt: 12 },
+      { xb: 6, xf: 24, yb: 0, yt: 6 },
+      { xb: 12, xf: 12, yb: 9, yt: 15 },
+      { xb: 15, xf: 12, yb: 0, yt: 15 },
+      { xb: 9, xf: 27, yb: 0, yt: 18 },
+      { xb: 12, xf: 27, yb: 0, yt: 15 },
+      { xb: 18, xf: 33, yb: 0, yt: 12 },
+    ],
     msPerFrame: 60,
   },
   jump: {
     url: 'sprites/run/runsheet2.png',
     frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-    hitboxes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    hitboxes: [{ xb: 0, xf: 0, yb: 0, yt: 0 }],
     msPerFrame: 70,
   },
 };
@@ -330,23 +342,30 @@ const NinjaRun: NextPage = () => {
       if (newX < 0) {
         newX = 0;
         player.vx = 0; // Stop the player at the left wall
-      } else if (newX + PLAYER_WIDTH > GAME_WIDTH) {
-        newX = GAME_WIDTH - PLAYER_WIDTH;
+      } else if (newX + PLAYER_SIZE > GAME_WIDTH) {
+        newX = GAME_WIDTH - PLAYER_SIZE;
         player.vx = 0; // Stop the player at the right wall
       }
 
       // Check for collisions with obstacles
       let isColliding = false;
       for (const obstacle of player.obstacles) {
-        const yCollision =
-          player.y +
+        const hitbox =
           ANIMATIONS[player.currentAnimation].hitboxes[player.currentFrame];
 
+        let xCollision = player.x;
+        let yCollision = player.y;
+        if (player.wall === 'left' || player.wall === 'right') {
+          // Mixing x and y because the sprite is rotated 90 degrees
+          xCollision = player.x + hitbox.yt;
+          yCollision = player.y + hitbox.xf;
+        }
+
         if (
-          player.x <= obstacle.x + OBSTACLE_SIZE &&
-          player.x + PLAYER_HEIGHT >= obstacle.x &&
+          xCollision <= obstacle.x + OBSTACLE_SIZE &&
+          xCollision + PLAYER_SIZE >= obstacle.x &&
           yCollision <= obstacle.y + OBSTACLE_SIZE &&
-          yCollision + PLAYER_WIDTH >= obstacle.y
+          yCollision + PLAYER_SIZE >= obstacle.y
         ) {
           console.log('x:', player.x, 'y:', player.y);
           console.log('obstacle', obstacle);
@@ -377,7 +396,7 @@ const NinjaRun: NextPage = () => {
 
       if (player.x === 0) {
         player.wall = 'left';
-      } else if (player.x + PLAYER_WIDTH === GAME_WIDTH) {
+      } else if (player.x + PLAYER_SIZE === GAME_WIDTH) {
         player.wall = 'right';
       } else {
         player.wall = 'none';
