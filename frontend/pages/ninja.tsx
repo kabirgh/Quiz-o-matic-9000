@@ -16,6 +16,7 @@ type Player = {
   currentAnimation: 'run' | 'jump';
   currentFrame: number;
   lastFrameUpdate: number;
+  wall: 'left' | 'right' | 'none';
 };
 
 type Obstacle = {
@@ -96,6 +97,7 @@ const PlayerSprite = ({
   color,
   currentAnimation,
   currentFrame,
+  wall,
 }: Player) => {
   const anim = ANIMATIONS[currentAnimation];
   const frameIndex = anim.frames[currentFrame];
@@ -112,10 +114,11 @@ const PlayerSprite = ({
         height: frameHeight,
         imageRendering: 'pixelated',
         backgroundImage: `url('${anim.url}')`,
-        transform: `scaleY(-1)`,
+        transform: wall === 'left' ? `scaleY(-1)` : 'none',
         rotate: '-90deg',
         backgroundPosition: `-${frameIndex * frameWidth}px 0px`,
         backgroundSize: 'auto 100%',
+        border: `1px solid black`,
       }}
     ></div>
   );
@@ -169,7 +172,8 @@ const DEFAULT_OBSTACLES: Obstacle[] = [
   },
 ];
 
-const PLAYER_SIZE = 30;
+// PLAYER_WIDTH == height of the sprite, which is rotated 90 degrees
+const PLAYER_WIDTH = 72;
 const PLAYER_VX = 1;
 
 const DEFAULT_PLAYERS: Player[] = [
@@ -181,6 +185,7 @@ const DEFAULT_PLAYERS: Player[] = [
     isGameOver: false,
     color: 'blue',
     currentAnimation: 'run',
+    wall: 'left',
     currentFrame: 0,
     lastFrameUpdate: Date.now(),
   },
@@ -192,6 +197,7 @@ const DEFAULT_PLAYERS: Player[] = [
     isGameOver: false,
     color: 'green',
     currentAnimation: 'run',
+    wall: 'left',
     currentFrame: 0,
     lastFrameUpdate: Date.now(),
   },
@@ -203,6 +209,7 @@ const DEFAULT_PLAYERS: Player[] = [
     isGameOver: false,
     color: 'red',
     currentAnimation: 'run',
+    wall: 'left',
     currentFrame: 0,
     lastFrameUpdate: Date.now(),
   },
@@ -214,6 +221,7 @@ const DEFAULT_PLAYERS: Player[] = [
     isGameOver: false,
     color: 'yellow',
     currentAnimation: 'run',
+    wall: 'left',
     currentFrame: 0,
     lastFrameUpdate: Date.now(),
   },
@@ -318,8 +326,8 @@ const NinjaRun: NextPage = () => {
       if (newX < 0) {
         newX = 0;
         player.vx = 0; // Stop the player at the left wall
-      } else if (newX + PLAYER_SIZE > GAME_WIDTH) {
-        newX = GAME_WIDTH - PLAYER_SIZE;
+      } else if (newX + PLAYER_WIDTH > GAME_WIDTH) {
+        newX = GAME_WIDTH - PLAYER_WIDTH;
         player.vx = 0; // Stop the player at the right wall
       }
 
@@ -332,9 +340,9 @@ const NinjaRun: NextPage = () => {
 
         if (
           newX <= obstacle.x + OBSTACLE_SIZE &&
-          newX + PLAYER_SIZE >= obstacle.x &&
+          newX + PLAYER_WIDTH >= obstacle.x &&
           yCollision <= obstacle.y + OBSTACLE_SIZE &&
-          yCollision + PLAYER_SIZE >= obstacle.y
+          yCollision + PLAYER_WIDTH >= obstacle.y
         ) {
           isColliding = true;
           break;
@@ -352,6 +360,14 @@ const NinjaRun: NextPage = () => {
 
       // Update player position
       player.x = newX;
+
+      if (player.x === 0) {
+        player.wall = 'left';
+      } else if (player.x + PLAYER_WIDTH === GAME_WIDTH) {
+        player.wall = 'right';
+      } else {
+        player.wall = 'none';
+      }
 
       // Update animation frame
       const now = Date.now();
