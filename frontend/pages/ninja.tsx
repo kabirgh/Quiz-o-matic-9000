@@ -255,16 +255,25 @@ const NinjaRun: NextPage = () => {
   const updateGameSpeed = useCallback((_deltaTime: number) => {
     const state = gameState.current;
     // Gradually increase the speed of the obstacles
-    if (Date.now() - state.speedLastUpdated > 500) {
+    const now = Date.now();
+    if (now - state.speedLastUpdated > 500) {
       state.speed *= 1.015;
-      state.speedLastUpdated = Date.now();
+      state.speedLastUpdated = now;
     }
   }, []);
 
   const updateObstacles = useCallback((deltaTime: number) => {
     const state = gameState.current;
 
-    if (state.players.every((player) => player.isGameOver)) {
+    // Don't update obstacles if all players are game over
+    let isGameOverForAll = true;
+    for (const player of state.players) {
+      if (!player.isGameOver) {
+        isGameOverForAll = false;
+        break;
+      }
+    }
+    if (isGameOverForAll) {
       return;
     }
 
@@ -315,18 +324,22 @@ const NinjaRun: NextPage = () => {
       }
 
       // Check for collisions with obstacles
-      const isColliding = player.obstacles.some((obstacle) => {
+      let isColliding = false;
+      for (const obstacle of player.obstacles) {
         const yCollision =
           player.y +
           ANIMATIONS[player.currentAnimation].hitboxes[player.currentFrame];
 
-        return (
+        if (
           newX <= obstacle.x + OBSTACLE_SIZE &&
           newX + PLAYER_SIZE >= obstacle.x &&
           yCollision <= obstacle.y + OBSTACLE_SIZE &&
           yCollision + PLAYER_SIZE >= obstacle.y
-        );
-      });
+        ) {
+          isColliding = true;
+          break;
+        }
+      }
 
       if (isColliding) {
         // Copy a snapshot of the obstacles list
@@ -341,47 +354,46 @@ const NinjaRun: NextPage = () => {
       player.x = newX;
 
       // Update animation frame
+      const now = Date.now();
       if (
         player.lastFrameUpdate +
           ANIMATIONS[player.currentAnimation].msPerFrame <
-        Date.now()
+        now
       ) {
         const currentFrame =
           (player.currentFrame + 1) %
           ANIMATIONS[player.currentAnimation].frames.length;
 
         player.currentFrame = currentFrame;
-        player.lastFrameUpdate = Date.now();
+        player.lastFrameUpdate = now;
       }
     }
   }, []);
 
   // On button press, change the player's direction
   const handleJump = useCallback((index: number) => {
-    const state = gameState.current;
-    state.players = state.players.map((player, i) => {
-      if (i !== index) {
-        return player;
-      }
+    const player = gameState.current.players[index];
 
-      // if game over, do nothing
-      if (player.isGameOver) {
-        return player;
-      }
+    // if game over, do nothing
+    if (player.isGameOver) {
+      return player;
+    }
 
-      // if the player is already flipping, change direction
-      if (player.vx !== 0) {
-        return { ...player, vx: -player.vx };
-      }
-      // if the player is on the left side of the screen, move right
-      else if (player.x === 0) {
-        return { ...player, vx: PLAYER_VX };
-      }
-      // otherwise (player on the right side of the screen), move left
-      else {
-        return { ...player, vx: -PLAYER_VX };
-      }
-    });
+    let newVx = 0;
+    // if the player is already flipping, change direction
+    if (player.vx !== 0) {
+      newVx = -player.vx;
+    }
+    // if the player is on the left side of the screen, move right
+    else if (player.x === 0) {
+      newVx = PLAYER_VX;
+    }
+    // otherwise (player on the right side of the screen), move left
+    else {
+      newVx = -PLAYER_VX;
+    }
+
+    gameState.current.players[index].vx = newVx;
   }, []);
 
   // Button press event listener
