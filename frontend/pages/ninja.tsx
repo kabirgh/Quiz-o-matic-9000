@@ -105,22 +105,41 @@ const PlayerSprite = ({
   const frameHeight = 72;
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        left: x,
-        top: y,
-        width: frameWidth,
-        height: frameHeight,
-        imageRendering: 'pixelated',
-        backgroundImage: `url('${anim.url}')`,
-        transform: wall === 'left' ? `scaleY(-1)` : 'none',
-        rotate: '-90deg',
-        backgroundPosition: `-${frameIndex * frameWidth}px 0px`,
-        backgroundSize: 'auto 100%',
-        border: `1px solid black`,
-      }}
-    ></div>
+    <>
+      <div
+        style={{
+          position: 'absolute',
+          left: x,
+          top: y,
+          width: frameWidth,
+          height: frameHeight,
+          imageRendering: 'pixelated',
+          backgroundImage: `url('${anim.url}')`,
+          transform: wall === 'left' ? `scaleY(-1)` : 'none',
+          rotate: '-90deg',
+          backgroundPosition: `-${frameIndex * frameWidth}px 0px`,
+          backgroundSize: 'auto 100%',
+          border: `1px solid black`,
+        }}
+      ></div>
+      {/* Hitbox, only for left wall */}
+      <div
+        style={{
+          position: 'absolute',
+          left: x + anim.hitboxes[currentFrame].yb,
+          top: y + anim.hitboxes[currentFrame].xf,
+          width:
+            PLAYER_SIZE -
+            anim.hitboxes[currentFrame].yt -
+            anim.hitboxes[currentFrame].yb,
+          height:
+            PLAYER_SIZE -
+            anim.hitboxes[currentFrame].xf -
+            anim.hitboxes[currentFrame].xb,
+          border: '1px solid blue',
+        }}
+      ></div>
+    </>
   );
 };
 
@@ -249,7 +268,7 @@ const ANIMATIONS = {
       { xb: 12, xf: 27, yb: 0, yt: 15 },
       { xb: 18, xf: 33, yb: 0, yt: 12 },
     ],
-    msPerFrame: 60,
+    msPerFrame: 50,
   },
   jump: {
     url: 'sprites/run/runsheet2.png',
