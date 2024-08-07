@@ -185,6 +185,9 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
       position: 'relative',
       overflow: 'hidden',
       margin: 16,
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
     }}
   >
     <div
@@ -200,6 +203,13 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
     >
       {player.score}
     </div>
+    {player.isGameOver && (
+      <div
+        style={{ fontFamily: 'Courier New', fontSize: 24, fontWeight: 'bold' }}
+      >
+        GAME OVER
+      </div>
+    )}
     <PlayerSprite {...player} />
     {obstacles.map((obstacle, index) => (
       <ObstacleSprite key={index} {...obstacle} />
@@ -210,7 +220,7 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
 //
 // Constants
 //
-const GAME_HEIGHT = 480;
+const GAME_HEIGHT = 540;
 const GAME_WIDTH = 300;
 
 const OBSTACLE_SIZE = 48;
@@ -394,6 +404,15 @@ const NinjaRun: NextPage = () => {
     for (const player of state.players) {
       if (!player.isGameOver) {
         player.obstacles = activeObstacles;
+      } else {
+        // Keep animating the obstacles for the game over players
+        for (const obstacle of player.obstacles) {
+          if (obstacle.lastFrameUpdate + ANIMATIONS.bat.msPerFrame < now) {
+            obstacle.currentFrame =
+              (obstacle.currentFrame + 1) % ANIMATIONS.bat.frames;
+            obstacle.lastFrameUpdate = now;
+          }
+        }
       }
     }
   }, []);
