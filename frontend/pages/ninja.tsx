@@ -31,13 +31,22 @@ type GameScreenState = {
   obstacles: Obstacle[];
 };
 
+type GameState = {
+  players: Player[];
+  obstaclePool: ObstaclePool;
+  speed: number;
+  speedLastUpdated: number;
+  obstacleBag: number[];
+  lastTick: number;
+};
+
 class ObstaclePool {
   private pool: Obstacle[] = [];
   private activeObstacles: Obstacle[] = [];
 
   constructor(initialSize: number) {
-    this.activeObstacles = [...DEFAULT_OBSTACLES];
-    for (let i = 0; i < initialSize - DEFAULT_OBSTACLES.length; i++) {
+    this.activeObstacles = structuredClone(DEFAULT_OBSTACLES);
+    for (let i = 0; i < initialSize - this.activeObstacles.length; i++) {
       this.pool.push({ x: 0, y: 0, currentFrame: 0, lastFrameUpdate: 0 });
     }
   }
@@ -181,6 +190,7 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
     style={{
       width: GAME_WIDTH,
       height: GAME_HEIGHT,
+      backgroundColor: 'white',
       border: '1px solid black',
       position: 'relative',
       overflow: 'hidden',
@@ -198,7 +208,7 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
         fontFamily: 'Courier New',
         fontSize: 16,
         zIndex: 2, // show over sprites
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
       }}
     >
       {player.score}
@@ -336,16 +346,36 @@ const ANIMATIONS = {
 const NinjaRun: NextPage = () => {
   const router = useRouter();
   const [, setRenderTrigger] = useState({});
-  const gameState = useRef({
-    players: DEFAULT_PLAYERS,
+  const [playAgainDisabled, setPlayAgainDisabled] = useState(true);
+  const gameState = useRef<GameState>({
+    players: [],
     // Same obstacles used for all players. player.obstacles is usually a reference to the list in the pool
-    obstaclePool: new ObstaclePool(20),
+    obstaclePool: new ObstaclePool(0),
     speed: 0.15,
     speedLastUpdated: Date.now(),
     // Ensure we don't choose the same side for new obstacles too many times in a row
     obstacleBag: [...OBSTACLE_BAG_DEFAULT],
     lastTick: 0,
   });
+
+  const reset = useCallback(() => {
+    gameState.current = {
+      players: structuredClone(DEFAULT_PLAYERS).map((player) => ({
+        ...player,
+        // Explicitly reset the score to 0
+        // Workaround because I can't be bothered to figure out why
+        // structuredClone doesn't reset all props
+        // Probably some shallow copy somewhere
+        score: 0,
+      })),
+      obstaclePool: new ObstaclePool(20),
+      speed: 0.15,
+      speedLastUpdated: Date.now(),
+      obstacleBag: [...OBSTACLE_BAG_DEFAULT],
+      lastTick: 0,
+    };
+    setPlayAgainDisabled(true);
+  }, []);
 
   const updateGameSpeed = useCallback((_deltaTime: number) => {
     const state = gameState.current;
@@ -370,6 +400,7 @@ const NinjaRun: NextPage = () => {
       }
     }
     if (isGameOverForAll) {
+      setPlayAgainDisabled(false);
       return;
     }
 
@@ -642,11 +673,30 @@ const NinjaRun: NextPage = () => {
   }, [gameLoop]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-      <div className="mb-4 text-center">
-        <h2 className="text-2xl font-bold">Ninja Run</h2>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#323232]">
+      <div className="text-center text-white">
+        <h2
+          style={{
+            fontFamily: 'Courier New',
+            fontSize:
+              gameState.current.players.length === 0 ? '4rem' : '2.25rem',
+            marginBottom:
+              gameState.current.players.length === 0 ? '2rem' : '0.5rem',
+          }}
+        >
+          NINJA RUN
+        </h2>
       </div>
-      <div className="flex mb-4">
+      <div>
+        <button
+          className="text-sm px-3 py-1 mb-1"
+          disabled={playAgainDisabled}
+          onClick={() => reset()}
+        >
+          {gameState.current.players.length === 0 ? 'Start' : 'Play again'}
+        </button>
+      </div>
+      <div className="flex">
         {gameState.current.players.map((player, index) => (
           <GameScreen
             key={index}
