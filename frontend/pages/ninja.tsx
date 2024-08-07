@@ -22,6 +22,8 @@ type Player = {
 type Obstacle = {
   x: number;
   y: number;
+  currentFrame: number;
+  lastFrameUpdate: number;
 };
 
 type GameScreenState = {
@@ -36,7 +38,7 @@ class ObstaclePool {
   constructor(initialSize: number) {
     this.activeObstacles = [...DEFAULT_OBSTACLES];
     for (let i = 0; i < initialSize - DEFAULT_OBSTACLES.length; i++) {
-      this.pool.push({ x: 0, y: 0 });
+      this.pool.push({ x: 0, y: 0, currentFrame: 0, lastFrameUpdate: 0 });
     }
   }
 
@@ -45,7 +47,7 @@ class ObstaclePool {
     if (this.pool.length > 0) {
       obstacle = this.pool.pop()!;
     } else {
-      obstacle = { x: 0, y: 0 };
+      obstacle = { x: 0, y: 0, currentFrame: 0, lastFrameUpdate: 0 };
     }
     obstacle.x = x;
     obstacle.y = y;
@@ -94,14 +96,11 @@ const shuffle = (array: number[]): number[] => {
 const PlayerSprite = ({
   x,
   y,
-  color,
   currentAnimation,
   currentFrame,
   wall,
 }: Player) => {
   const { hitbox, url } = ANIMATIONS[currentAnimation];
-  const frameWidth = 72;
-  const frameHeight = 72;
 
   let transform = 'none';
   let rotate = '0deg';
@@ -119,13 +118,13 @@ const PlayerSprite = ({
           position: 'absolute',
           left: x,
           top: y,
-          width: frameWidth,
-          height: frameHeight,
+          width: PLAYER_SIZE,
+          height: PLAYER_SIZE,
           imageRendering: 'pixelated',
           backgroundImage: `url('${url}')`,
           transform: transform,
           rotate: rotate,
-          backgroundPosition: `-${currentFrame * frameWidth}px 0px`,
+          backgroundPosition: `-${currentFrame * PLAYER_SIZE}px 0px`,
           backgroundSize: 'auto 100%',
           // border: `1px solid black`,
         }}
@@ -144,18 +143,38 @@ const PlayerSprite = ({
   );
 };
 
-const ObstacleSprite = ({ x, y }: Obstacle) => (
-  <div
-    style={{
-      position: 'absolute',
-      left: x,
-      top: y,
-      width: OBSTACLE_SIZE,
-      height: OBSTACLE_SIZE,
-      backgroundColor: 'red',
-    }}
-  />
-);
+const ObstacleSprite = ({ x, y, currentFrame }: Obstacle) => {
+  const { hitbox, url } = ANIMATIONS.bat;
+
+  return (
+    <>
+      <div
+        style={{
+          position: 'absolute',
+          left: x,
+          top: y,
+          width: OBSTACLE_SIZE,
+          height: OBSTACLE_SIZE,
+          imageRendering: 'pixelated',
+          backgroundImage: `url('${url}')`,
+          backgroundPosition: `-${currentFrame * OBSTACLE_SIZE}px 0px`,
+          backgroundSize: 'auto 100%',
+          // border: `1px solid black`,
+        }}
+      ></div>
+      <div
+        style={{
+          position: 'absolute',
+          left: x + hitbox.xb,
+          top: y + hitbox.yt,
+          width: OBSTACLE_SIZE - hitbox.xb - hitbox.xf,
+          height: OBSTACLE_SIZE - hitbox.yt - hitbox.yb,
+          // border: '1px solid blue',
+        }}
+      ></div>
+    </>
+  );
+};
 
 const GameScreen = ({ player, obstacles }: GameScreenState) => (
   <div
@@ -176,6 +195,7 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
         fontFamily: 'Courier New',
         fontSize: 16,
         zIndex: 2, // show over sprites
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
       }}
     >
       {player.score}
@@ -193,14 +213,16 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
 const GAME_HEIGHT = 480;
 const GAME_WIDTH = 300;
 
-const OBSTACLE_SIZE = 24;
-const OBSTACLE_MIN_GAP = 150;
+const OBSTACLE_SIZE = 48;
+const OBSTACLE_MIN_GAP = 220;
 const OBSTACLE_BAG_DEFAULT = shuffle([0, 0, 1, 1]);
 
 const DEFAULT_OBSTACLES: Obstacle[] = [
   {
     x: 0,
     y: 0,
+    currentFrame: 0,
+    lastFrameUpdate: 0,
   },
 ];
 
@@ -290,6 +312,12 @@ const ANIMATIONS = {
     hitbox: { xb: 0, xf: 0, yb: 0, yt: 0 },
     msPerFrame: 70,
   },
+  bat: {
+    url: 'sprites/batsheet.png',
+    frames: 3,
+    hitbox: { xb: 4, xf: 4, yb: 4, yt: 4 },
+    msPerFrame: 100,
+  },
 };
 
 //
@@ -302,7 +330,7 @@ const NinjaRun: NextPage = () => {
     players: DEFAULT_PLAYERS,
     // Same obstacles used for all players. player.obstacles is usually a reference to the list in the pool
     obstaclePool: new ObstaclePool(20),
-    speed: 0.12,
+    speed: 0.15,
     speedLastUpdated: Date.now(),
     // Ensure we don't choose the same side for new obstacles too many times in a row
     obstacleBag: [...OBSTACLE_BAG_DEFAULT],
@@ -321,6 +349,7 @@ const NinjaRun: NextPage = () => {
 
   const updateObstacles = useCallback((deltaTime: number) => {
     const state = gameState.current;
+    const now = Date.now();
 
     // Don't update obstacles if all players are game over
     let isGameOverForAll = true;
@@ -352,6 +381,15 @@ const NinjaRun: NextPage = () => {
       );
     }
 
+    // Update animation frame
+    for (const obstacle of activeObstacles) {
+      if (obstacle.lastFrameUpdate + ANIMATIONS.bat.msPerFrame < now) {
+        obstacle.currentFrame =
+          (obstacle.currentFrame + 1) % ANIMATIONS.bat.frames;
+        obstacle.lastFrameUpdate = now;
+      }
+    }
+
     // Live players reference the same obstacles list to reduce memory allocations and GC pauses
     for (const player of state.players) {
       if (!player.isGameOver) {
@@ -362,6 +400,7 @@ const NinjaRun: NextPage = () => {
 
   const updatePlayers = useCallback((deltaTime: number) => {
     const state = gameState.current;
+    const now = Date.now();
 
     for (const player of state.players) {
       if (player.isGameOver) {
@@ -375,7 +414,7 @@ const NinjaRun: NextPage = () => {
           player.currentFrame < ANIMATIONS.hit.frames - 1
         ) {
           const targetX = (GAME_WIDTH - PLAYER_SIZE) / 2;
-          const moveDistance = (5 * deltaTime) / 16; // Adjust speed as needed
+          const moveDistance = deltaTime * 0.2;
           if (player.x < targetX) {
             player.x = Math.min(player.x + moveDistance, targetX);
           } else if (player.x > targetX) {
@@ -383,7 +422,6 @@ const NinjaRun: NextPage = () => {
           }
 
           // Update hit animation frame
-          const now = Date.now();
           if (now - player.lastFrameUpdate > ANIMATIONS.hit.msPerFrame) {
             player.currentFrame++;
             player.lastFrameUpdate = now;
@@ -402,7 +440,7 @@ const NinjaRun: NextPage = () => {
 
         // Fall animation
         if (player.currentAnimation === 'fall') {
-          player.y += 0.2 * deltaTime;
+          player.y += 0.15 * deltaTime;
 
           // Update fall animation frame
           const now = Date.now();
@@ -433,15 +471,16 @@ const NinjaRun: NextPage = () => {
       let isColliding = false;
       for (const obstacle of player.obstacles) {
         const { xb, xf, yb, yt } = ANIMATIONS[player.currentAnimation].hitbox;
+        const oBox = ANIMATIONS.bat.hitbox;
         if (
           // right edge of player is to the right of the left edge of obstacle
-          player.x + PLAYER_SIZE - xb > obstacle.x &&
+          player.x + PLAYER_SIZE - xb > obstacle.x + oBox.xb &&
           // left edge of player is to the left of the right edge of obstacle
-          player.x + xf < obstacle.x + OBSTACLE_SIZE &&
+          player.x + xf < obstacle.x + OBSTACLE_SIZE - oBox.xf &&
           // bottom edge of player is below the top edge of obstacle
-          player.y + PLAYER_SIZE - yb > obstacle.y &&
+          player.y + PLAYER_SIZE - yb > obstacle.y + oBox.yt &&
           // top edge of player is above the bottom edge of obstacle
-          player.y + yt < obstacle.y + OBSTACLE_SIZE
+          player.y + yt < obstacle.y + OBSTACLE_SIZE - oBox.yb
         ) {
           isColliding = true;
           break;
@@ -476,7 +515,6 @@ const NinjaRun: NextPage = () => {
       }
 
       // Update animation frame
-      const now = Date.now();
       if (
         player.lastFrameUpdate +
           ANIMATIONS[player.currentAnimation].msPerFrame <
@@ -585,7 +623,7 @@ const NinjaRun: NextPage = () => {
   }, [gameLoop]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
       <div className="mb-4 text-center">
         <h2 className="text-2xl font-bold">Ninja Run</h2>
       </div>
