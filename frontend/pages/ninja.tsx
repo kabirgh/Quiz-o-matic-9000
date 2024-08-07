@@ -10,6 +10,7 @@ type Player = {
   x: number;
   y: number;
   vx: number;
+  score: number;
   color: string;
   obstacles: Obstacle[];
   isGameOver: boolean;
@@ -168,6 +169,18 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
       margin: 16,
     }}
   >
+    <div
+      style={{
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        fontFamily: 'Courier New',
+        fontSize: 16,
+        zIndex: 2, // show over sprites
+      }}
+    >
+      {player.score}
+    </div>
     <PlayerSprite {...player} />
     {obstacles.map((obstacle, index) => (
       <ObstacleSprite key={index} {...obstacle} />
@@ -202,6 +215,7 @@ const DEFAULT_PLAYERS: Player[] = [
     x: 0,
     y: GAME_HEIGHT * 0.7,
     vx: 0,
+    score: 0,
     obstacles: DEFAULT_OBSTACLES,
     isGameOver: false,
     color: 'blue',
@@ -214,6 +228,7 @@ const DEFAULT_PLAYERS: Player[] = [
     x: 0,
     y: GAME_HEIGHT * 0.7,
     vx: 0,
+    score: 0,
     obstacles: DEFAULT_OBSTACLES,
     isGameOver: false,
     color: 'green',
@@ -226,6 +241,7 @@ const DEFAULT_PLAYERS: Player[] = [
     x: 0,
     y: GAME_HEIGHT * 0.7,
     vx: 0,
+    score: 0,
     obstacles: DEFAULT_OBSTACLES,
     isGameOver: false,
     color: 'red',
@@ -238,6 +254,7 @@ const DEFAULT_PLAYERS: Player[] = [
     x: 0,
     y: GAME_HEIGHT * 0.7,
     vx: 0,
+    score: 0,
     obstacles: DEFAULT_OBSTACLES,
     isGameOver: false,
     color: 'yellow',
@@ -470,6 +487,10 @@ const NinjaRun: NextPage = () => {
           (player.currentFrame + 1) %
           ANIMATIONS[player.currentAnimation].frames;
 
+        // Also update the score here to avoid another date.now call
+        player.score += Math.round(
+          Math.max(0, now - player.lastFrameUpdate) / 100,
+        );
         player.currentFrame = currentFrame;
         player.lastFrameUpdate = now;
       }
