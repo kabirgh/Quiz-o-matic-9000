@@ -13,7 +13,7 @@ type Player = {
   color: string;
   obstacles: Obstacle[];
   isGameOver: boolean;
-  currentAnimation: 'run' | 'hit' | 'death';
+  currentAnimation: 'run' | 'hit' | 'fall';
   currentFrame: number;
   lastFrameUpdate: number;
   wall: 'left' | 'right' | 'none';
@@ -108,7 +108,7 @@ const PlayerSprite = ({
   if (currentAnimation === 'run') {
     transform = wall === 'left' ? `scaleY(-1)` : 'none';
     rotate = '-90deg';
-  } else if (currentAnimation === 'hit' || currentAnimation === 'death') {
+  } else if (currentAnimation === 'hit' || currentAnimation === 'fall') {
     transform = wall === 'left' ? `scaleX(-1)` : 'none';
   }
 
@@ -127,7 +127,7 @@ const PlayerSprite = ({
           rotate: rotate,
           backgroundPosition: `-${currentFrame * frameWidth}px 0px`,
           backgroundSize: 'auto 100%',
-          border: `1px solid black`,
+          // border: `1px solid black`,
         }}
       ></div>
       <div
@@ -137,7 +137,7 @@ const PlayerSprite = ({
           top: y + anim.hitbox.xf,
           width: PLAYER_SIZE - anim.hitbox.yt - anim.hitbox.yb,
           height: PLAYER_SIZE - anim.hitbox.xf - anim.hitbox.xb,
-          border: '1px solid blue',
+          // border: '1px solid blue',
         }}
       ></div>
     </>
@@ -257,13 +257,13 @@ const ANIMATIONS = {
   },
   hit: {
     url: 'sprites/hitsheet.png',
-    frames: 5,
+    frames: 6,
     hitbox: { xb: 0, xf: 0, yb: 0, yt: 0 },
-    msPerFrame: 200,
+    msPerFrame: 100,
   },
-  death: {
-    url: 'sprites/deathsheet.png',
-    frames: 19,
+  fall: {
+    url: 'sprites/fallsheet.png',
+    frames: 3,
     hitbox: { xb: 0, xf: 0, yb: 0, yt: 0 },
     msPerFrame: 70,
   },
@@ -279,7 +279,7 @@ const NinjaRun: NextPage = () => {
     players: DEFAULT_PLAYERS,
     // Same obstacles used for all players. player.obstacles is usually a reference to the list in the pool
     obstaclePool: new ObstaclePool(20),
-    speed: 0.1,
+    speed: 0.12,
     speedLastUpdated: Date.now(),
     // Ensure we don't choose the same side for new obstacles too many times in a row
     obstacleBag: [...OBSTACLE_BAG_DEFAULT],
@@ -342,7 +342,15 @@ const NinjaRun: NextPage = () => {
 
     for (const player of state.players) {
       if (player.isGameOver) {
-        if (player.currentAnimation === 'hit' && player.currentFrame < 4) {
+        // Player has fallen off the screen
+        if (player.y > GAME_HEIGHT) {
+          continue;
+        }
+
+        if (
+          player.currentAnimation === 'hit' &&
+          player.currentFrame < ANIMATIONS.hit.frames - 1
+        ) {
           const targetX = (GAME_WIDTH - PLAYER_SIZE) / 2;
           const moveDistance = (5 * deltaTime) / 16; // Adjust speed as needed
           if (player.x < targetX) {
@@ -354,10 +362,32 @@ const NinjaRun: NextPage = () => {
           // Update hit animation frame
           const now = Date.now();
           if (now - player.lastFrameUpdate > ANIMATIONS.hit.msPerFrame) {
-            if (player.currentFrame < ANIMATIONS.hit.frames - 1) {
-              player.currentFrame++;
-              player.lastFrameUpdate = now;
-            }
+            player.currentFrame++;
+            player.lastFrameUpdate = now;
+          }
+        }
+
+        // Switch to fall animation when hit animation is done
+        if (
+          player.currentAnimation === 'hit' &&
+          player.currentFrame === ANIMATIONS.hit.frames - 1
+        ) {
+          player.currentAnimation = 'fall';
+          player.currentFrame = 0;
+          player.lastFrameUpdate = Date.now();
+        }
+
+        // Fall animation
+        if (player.currentAnimation === 'fall') {
+          player.y += 0.2 * deltaTime;
+
+          // Update fall animation frame
+          const now = Date.now();
+          if (now - player.lastFrameUpdate > ANIMATIONS.fall.msPerFrame) {
+            player.currentFrame =
+              (player.currentFrame + 1) %
+              ANIMATIONS[player.currentAnimation].frames;
+            player.lastFrameUpdate = now;
           }
         }
 
