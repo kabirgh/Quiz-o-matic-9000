@@ -1,7 +1,6 @@
 import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FpsView } from 'react-fps';
 
 //
 // Types
@@ -589,7 +588,6 @@ const NinjaRun: NextPage = () => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="mb-4 text-center">
         <h2 className="text-2xl font-bold">Ninja Run</h2>
-        <FpsView />
       </div>
       <div className="flex mb-4">
         {gameState.current.players.map((player, index) => (
