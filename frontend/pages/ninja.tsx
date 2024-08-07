@@ -122,30 +122,13 @@ const PlayerSprite = ({
           border: `1px solid black`,
         }}
       ></div>
-      {/* Hitbox, only for left wall */}
-      {/* <div
-        style={{
-          position: 'absolute',
-          left: x + anim.hitboxes[currentFrame].yb,
-          top: y + anim.hitboxes[currentFrame].xf,
-          width:
-            PLAYER_SIZE -
-            anim.hitboxes[currentFrame].yt -
-            anim.hitboxes[currentFrame].yb,
-          height:
-            PLAYER_SIZE -
-            anim.hitboxes[currentFrame].xf -
-            anim.hitboxes[currentFrame].xb,
-          border: '1px solid blue',
-        }}
-      ></div> */}
       <div
         style={{
           position: 'absolute',
-          left: x,
-          top: y + 12,
-          width: PLAYER_SIZE - 12,
-          height: PLAYER_SIZE - 12 - 12,
+          left: wall === 'left' ? x + anim.hitbox.yb : x + anim.hitbox.yt,
+          top: y + anim.hitbox.xf,
+          width: PLAYER_SIZE - anim.hitbox.yt - anim.hitbox.yb,
+          height: PLAYER_SIZE - anim.hitbox.xf - anim.hitbox.xb,
           border: '1px solid blue',
         }}
       ></div>
@@ -209,7 +192,7 @@ const PLAYER_VX = 1;
 const DEFAULT_PLAYERS: Player[] = [
   {
     x: 0,
-    y: GAME_HEIGHT * 0.8,
+    y: GAME_HEIGHT * 0.7,
     vx: 0,
     obstacles: DEFAULT_OBSTACLES,
     isGameOver: false,
@@ -221,7 +204,7 @@ const DEFAULT_PLAYERS: Player[] = [
   },
   {
     x: 0,
-    y: GAME_HEIGHT * 0.8,
+    y: GAME_HEIGHT * 0.7,
     vx: 0,
     obstacles: DEFAULT_OBSTACLES,
     isGameOver: false,
@@ -233,7 +216,7 @@ const DEFAULT_PLAYERS: Player[] = [
   },
   {
     x: 0,
-    y: GAME_HEIGHT * 0.8,
+    y: GAME_HEIGHT * 0.7,
     vx: 0,
     obstacles: DEFAULT_OBSTACLES,
     isGameOver: false,
@@ -245,7 +228,7 @@ const DEFAULT_PLAYERS: Player[] = [
   },
   {
     x: 0,
-    y: GAME_HEIGHT * 0.8,
+    y: GAME_HEIGHT * 0.7,
     vx: 0,
     obstacles: DEFAULT_OBSTACLES,
     isGameOver: false,
@@ -261,19 +244,19 @@ const ANIMATIONS = {
   run: {
     url: 'sprites/runsheet2.png',
     frames: [0, 1, 2, 3, 4, 5, 6, 7],
-    hitboxes: Array(8).fill({ xb: 0, xf: 0, yb: 0, yt: 0 }),
+    hitbox: { xb: 12, xf: 14, yb: 0, yt: 12 },
     msPerFrame: 70,
   },
   hit: {
     url: 'sprites/hitsheet.png',
     frames: [0, 1, 2, 3, 4],
-    hitboxes: Array(8).fill({ xb: 0, xf: 0, yb: 0, yt: 0 }),
+    hitbox: { xb: 0, xf: 0, yb: 0, yt: 0 },
     msPerFrame: 100,
   },
   jump: {
     url: 'sprites/run/runsheet2.png',
     frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-    hitboxes: Array(12).fill({ xb: 0, xf: 0, yb: 0, yt: 0 }),
+    hitbox: { xb: 0, xf: 0, yb: 0, yt: 0 },
     msPerFrame: 70,
   },
 };
@@ -369,33 +352,17 @@ const NinjaRun: NextPage = () => {
       // Check for collisions with obstacles
       let isColliding = false;
       for (const obstacle of player.obstacles) {
-        const hitbox =
-          ANIMATIONS[player.currentAnimation].hitboxes[player.currentFrame];
-
-        let xCollision = player.x;
-        let yCollision = player.y;
-        if (player.wall === 'left' || player.wall === 'right') {
-          // Mixing x and y because the sprite is rotated 90 degrees
-          xCollision = player.x + hitbox.yt;
-          yCollision = player.y + hitbox.xf;
-        }
-
+        const { xb, xf, yb, yt } = ANIMATIONS[player.currentAnimation].hitbox;
         if (
-          xCollision <= obstacle.x + OBSTACLE_SIZE &&
-          xCollision + PLAYER_SIZE >= obstacle.x &&
-          yCollision <= obstacle.y + OBSTACLE_SIZE &&
-          yCollision + PLAYER_SIZE >= obstacle.y
+          // right edge of player is to the right of the left edge of obstacle
+          player.x + PLAYER_SIZE - xb > obstacle.x &&
+          // left edge of player is to the left of the right edge of obstacle
+          player.x + xf < obstacle.x + OBSTACLE_SIZE &&
+          // bottom edge of player is below the top edge of obstacle
+          player.y + PLAYER_SIZE - yb > obstacle.y &&
+          // top edge of player is above the bottom edge of obstacle
+          player.y + yt < obstacle.y + OBSTACLE_SIZE
         ) {
-          console.log('x:', player.x, 'y:', player.y);
-          console.log('obstacle', obstacle);
-          console.log(
-            'animation frame:',
-            player.currentFrame,
-            'hitbox:',
-            ANIMATIONS[player.currentAnimation].hitboxes[player.currentFrame],
-          );
-          console.log('yCollision:', yCollision);
-
           isColliding = true;
           break;
         }
