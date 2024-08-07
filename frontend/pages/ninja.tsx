@@ -13,7 +13,7 @@ type Player = {
   color: string;
   obstacles: Obstacle[];
   isGameOver: boolean;
-  currentAnimation: 'run' | 'hit' | 'jump';
+  currentAnimation: 'run' | 'hit' | 'death';
   currentFrame: number;
   lastFrameUpdate: number;
   wall: 'left' | 'right' | 'none';
@@ -100,9 +100,17 @@ const PlayerSprite = ({
   wall,
 }: Player) => {
   const anim = ANIMATIONS[currentAnimation];
-  const frameIndex = anim.frames[currentFrame];
   const frameWidth = 72;
   const frameHeight = 72;
+
+  let transform = 'none';
+  let rotate = '0deg';
+  if (currentAnimation === 'run') {
+    transform = wall === 'left' ? `scaleY(-1)` : 'none';
+    rotate = '-90deg';
+  } else if (currentAnimation === 'hit' || currentAnimation === 'death') {
+    transform = wall === 'left' ? `scaleX(-1)` : 'none';
+  }
 
   return (
     <>
@@ -115,9 +123,9 @@ const PlayerSprite = ({
           height: frameHeight,
           imageRendering: 'pixelated',
           backgroundImage: `url('${anim.url}')`,
-          transform: wall === 'left' ? `scaleY(-1)` : 'none',
-          rotate: '-90deg',
-          backgroundPosition: `-${frameIndex * frameWidth}px 0px`,
+          transform: transform,
+          rotate: rotate,
+          backgroundPosition: `-${currentFrame * frameWidth}px 0px`,
           backgroundSize: 'auto 100%',
           border: `1px solid black`,
         }}
@@ -242,20 +250,20 @@ const DEFAULT_PLAYERS: Player[] = [
 
 const ANIMATIONS = {
   run: {
-    url: 'sprites/runsheet2.png',
-    frames: [0, 1, 2, 3, 4, 5, 6, 7],
+    url: 'sprites/runsheet.png',
+    frames: 8,
     hitbox: { xb: 12, xf: 14, yb: 0, yt: 12 },
     msPerFrame: 70,
   },
   hit: {
     url: 'sprites/hitsheet.png',
-    frames: [0, 1, 2, 3, 4],
+    frames: 5,
     hitbox: { xb: 0, xf: 0, yb: 0, yt: 0 },
-    msPerFrame: 100,
+    msPerFrame: 200,
   },
-  jump: {
-    url: 'sprites/run/runsheet2.png',
-    frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  death: {
+    url: 'sprites/deathsheet.png',
+    frames: 19,
     hitbox: { xb: 0, xf: 0, yb: 0, yt: 0 },
     msPerFrame: 70,
   },
@@ -334,6 +342,25 @@ const NinjaRun: NextPage = () => {
 
     for (const player of state.players) {
       if (player.isGameOver) {
+        if (player.currentAnimation === 'hit' && player.currentFrame < 4) {
+          const targetX = (GAME_WIDTH - PLAYER_SIZE) / 2;
+          const moveDistance = (5 * deltaTime) / 16; // Adjust speed as needed
+          if (player.x < targetX) {
+            player.x = Math.min(player.x + moveDistance, targetX);
+          } else if (player.x > targetX) {
+            player.x = Math.max(player.x - moveDistance, targetX);
+          }
+
+          // Update hit animation frame
+          const now = Date.now();
+          if (now - player.lastFrameUpdate > ANIMATIONS.hit.msPerFrame) {
+            if (player.currentFrame < ANIMATIONS.hit.frames - 1) {
+              player.currentFrame++;
+              player.lastFrameUpdate = now;
+            }
+          }
+        }
+
         continue;
       }
 
@@ -374,6 +401,10 @@ const NinjaRun: NextPage = () => {
           state.obstaclePool.getActiveObstacles(),
         );
         player.isGameOver = true;
+        player.currentAnimation = 'hit';
+        player.currentFrame = 0;
+        player.lastFrameUpdate = Date.now();
+        player.vx = 0; // Stop horizontal movement
         continue;
       }
 
@@ -397,7 +428,7 @@ const NinjaRun: NextPage = () => {
       ) {
         const currentFrame =
           (player.currentFrame + 1) %
-          ANIMATIONS[player.currentAnimation].frames.length;
+          ANIMATIONS[player.currentAnimation].frames;
 
         player.currentFrame = currentFrame;
         player.lastFrameUpdate = now;
