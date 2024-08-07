@@ -13,7 +13,7 @@ type Player = {
   color: string;
   obstacles: Obstacle[];
   isGameOver: boolean;
-  currentAnimation: 'run' | 'jump';
+  currentAnimation: 'run' | 'hit' | 'jump';
   currentFrame: number;
   lastFrameUpdate: number;
   wall: 'left' | 'right' | 'none';
@@ -123,7 +123,7 @@ const PlayerSprite = ({
         }}
       ></div>
       {/* Hitbox, only for left wall */}
-      <div
+      {/* <div
         style={{
           position: 'absolute',
           left: x + anim.hitboxes[currentFrame].yb,
@@ -136,6 +136,16 @@ const PlayerSprite = ({
             PLAYER_SIZE -
             anim.hitboxes[currentFrame].xf -
             anim.hitboxes[currentFrame].xb,
+          border: '1px solid blue',
+        }}
+      ></div> */}
+      <div
+        style={{
+          position: 'absolute',
+          left: x,
+          top: y + 12,
+          width: PLAYER_SIZE - 12,
+          height: PLAYER_SIZE - 12 - 12,
           border: '1px solid blue',
         }}
       ></div>
@@ -249,31 +259,21 @@ const DEFAULT_PLAYERS: Player[] = [
 
 const ANIMATIONS = {
   run: {
-    url: 'sprites/runsheet.png',
-    frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-    // empty space in front of sprite
-    // hitboxes: [24, 12, 12, 27, 33, 27, 24, 12, 12, 27, 27, 33],
-    hitboxes: [
-      // xb: xback, xf: xfront, yb: ybottom, yt: ytop
-      { xb: 21, xf: 24, yb: 0, yt: 6 },
-      { xb: 12, xf: 12, yb: 9, yt: 15 },
-      { xb: 15, xf: 12, yb: 0, yt: 15 },
-      { xb: 9, xf: 27, yb: 0, yt: 18 },
-      { xb: 12, xf: 33, yb: 0, yt: 15 },
-      { xb: 6, xf: 27, yb: 0, yt: 12 },
-      { xb: 6, xf: 24, yb: 0, yt: 6 },
-      { xb: 12, xf: 12, yb: 9, yt: 15 },
-      { xb: 15, xf: 12, yb: 0, yt: 15 },
-      { xb: 9, xf: 27, yb: 0, yt: 18 },
-      { xb: 12, xf: 27, yb: 0, yt: 15 },
-      { xb: 18, xf: 33, yb: 0, yt: 12 },
-    ],
-    msPerFrame: 50,
+    url: 'sprites/runsheet2.png',
+    frames: [0, 1, 2, 3, 4, 5, 6, 7],
+    hitboxes: Array(8).fill({ xb: 0, xf: 0, yb: 0, yt: 0 }),
+    msPerFrame: 70,
+  },
+  hit: {
+    url: 'sprites/hitsheet.png',
+    frames: [0, 1, 2, 3, 4],
+    hitboxes: Array(8).fill({ xb: 0, xf: 0, yb: 0, yt: 0 }),
+    msPerFrame: 100,
   },
   jump: {
     url: 'sprites/run/runsheet2.png',
     frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-    hitboxes: [{ xb: 0, xf: 0, yb: 0, yt: 0 }],
+    hitboxes: Array(12).fill({ xb: 0, xf: 0, yb: 0, yt: 0 }),
     msPerFrame: 70,
   },
 };
