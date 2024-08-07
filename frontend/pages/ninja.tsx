@@ -13,7 +13,7 @@ type Player = {
   color: string;
   obstacles: Obstacle[];
   isGameOver: boolean;
-  currentAnimation: 'run' | 'hit' | 'fall';
+  currentAnimation: 'run' | 'roll' | 'hit' | 'fall';
   currentFrame: number;
   lastFrameUpdate: number;
   wall: 'left' | 'right' | 'none';
@@ -99,7 +99,7 @@ const PlayerSprite = ({
   currentFrame,
   wall,
 }: Player) => {
-  const anim = ANIMATIONS[currentAnimation];
+  const { hitbox, url } = ANIMATIONS[currentAnimation];
   const frameWidth = 72;
   const frameHeight = 72;
 
@@ -122,7 +122,7 @@ const PlayerSprite = ({
           width: frameWidth,
           height: frameHeight,
           imageRendering: 'pixelated',
-          backgroundImage: `url('${anim.url}')`,
+          backgroundImage: `url('${url}')`,
           transform: transform,
           rotate: rotate,
           backgroundPosition: `-${currentFrame * frameWidth}px 0px`,
@@ -133,10 +133,10 @@ const PlayerSprite = ({
       <div
         style={{
           position: 'absolute',
-          left: wall === 'left' ? x + anim.hitbox.yb : x + anim.hitbox.yt,
-          top: y + anim.hitbox.xf,
-          width: PLAYER_SIZE - anim.hitbox.yt - anim.hitbox.yb,
-          height: PLAYER_SIZE - anim.hitbox.xf - anim.hitbox.xb,
+          left: wall === 'left' ? x + hitbox.yb : x + hitbox.yt,
+          top: y + hitbox.xf,
+          width: PLAYER_SIZE - hitbox.yt - hitbox.yb,
+          height: PLAYER_SIZE - hitbox.xf - hitbox.xb,
           // border: '1px solid blue',
         }}
       ></div>
@@ -252,6 +252,13 @@ const ANIMATIONS = {
   run: {
     url: 'sprites/runsheet.png',
     frames: 8,
+    hitbox: { xb: 12, xf: 14, yb: 0, yt: 12 },
+    msPerFrame: 70,
+  },
+  roll: {
+    url: 'sprites/rollsheet.png',
+    frames: 8,
+    // Keep same hitbox as run
     hitbox: { xb: 12, xf: 14, yb: 0, yt: 12 },
     msPerFrame: 70,
   },
@@ -443,10 +450,13 @@ const NinjaRun: NextPage = () => {
 
       if (player.x === 0) {
         player.wall = 'left';
+        player.currentAnimation = 'run';
       } else if (player.x + PLAYER_SIZE === GAME_WIDTH) {
         player.wall = 'right';
+        player.currentAnimation = 'run';
       } else {
         player.wall = 'none';
+        player.currentAnimation = 'roll';
       }
 
       // Update animation frame
