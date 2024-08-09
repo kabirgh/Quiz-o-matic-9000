@@ -3,20 +3,22 @@ import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ListTeams } from '../wailsjs/wailsjs/go/main/App';
+import { EventsOn } from '../wailsjs/wailsjs/runtime/runtime';
 
 // Use dummy players. When false, calls ListTeams to get real players
-const DEBUG = false;
+const DEBUG = true;
 
 //
 // Types
 //
 type Player = {
   name: string;
+  color: string;
+  buzzerId: string;
   x: number;
   y: number;
   vx: number;
   score: number;
-  color: string;
   obstacles: Obstacle[];
   isGameOver: boolean;
   currentAnimation: 'run' | 'roll' | 'hit' | 'fall';
@@ -282,13 +284,14 @@ const PLAYER_VX = 1.2;
 const DEFAULT_PLAYERS: Player[] = [
   {
     name: 'Player 1',
+    color: 'blue',
+    buzzerId: '1',
     x: 0,
     y: GAME_HEIGHT * 0.7,
     vx: 0,
     score: 0,
     obstacles: DEFAULT_OBSTACLES,
     isGameOver: false,
-    color: 'blue',
     currentAnimation: 'run',
     wall: 'left',
     currentFrame: 0,
@@ -296,13 +299,14 @@ const DEFAULT_PLAYERS: Player[] = [
   },
   {
     name: 'Lizard Wizard',
+    color: 'green',
+    buzzerId: '2',
     x: 0,
     y: GAME_HEIGHT * 0.7,
     vx: 0,
     score: 0,
     obstacles: DEFAULT_OBSTACLES,
     isGameOver: false,
-    color: 'green',
     currentAnimation: 'run',
     wall: 'left',
     currentFrame: 0,
@@ -310,13 +314,14 @@ const DEFAULT_PLAYERS: Player[] = [
   },
   {
     name: 'Surprise Entrant',
+    color: 'red',
+    buzzerId: '3',
     x: 0,
     y: GAME_HEIGHT * 0.7,
     vx: 0,
     score: 0,
     obstacles: DEFAULT_OBSTACLES,
     isGameOver: false,
-    color: 'red',
     currentAnimation: 'run',
     wall: 'left',
     currentFrame: 0,
@@ -324,13 +329,14 @@ const DEFAULT_PLAYERS: Player[] = [
   },
   {
     name: 'Bonk',
+    color: 'yellow',
+    buzzerId: '4',
     x: 0,
     y: GAME_HEIGHT * 0.7,
     vx: 0,
     score: 0,
     obstacles: DEFAULT_OBSTACLES,
     isGameOver: false,
-    color: 'yellow',
     currentAnimation: 'run',
     wall: 'left',
     currentFrame: 0,
@@ -417,6 +423,7 @@ const NinjaRun: NextPage = () => {
         gameState.current.players = teams.map((team) => ({
           name: team.name,
           color: team.color,
+          buzzerId: team.buzzerId || '',
           y: GAME_HEIGHT * 0.7,
           x: 0,
           vx: 0,
@@ -673,8 +680,17 @@ const NinjaRun: NextPage = () => {
   }, []);
 
   // On button press, change the player's direction
-  const handleJump = useCallback((index: number) => {
-    const player = gameState.current.players[index];
+  const handleJump = useCallback((buzzerId: string) => {
+    let player: Player | null = null;
+    for (const p of gameState.current.players) {
+      if (p.buzzerId === buzzerId) {
+        player = p;
+        break;
+      }
+    }
+    if (!player) {
+      return;
+    }
 
     // if game over, do nothing
     if (player.isGameOver) {
@@ -695,8 +711,20 @@ const NinjaRun: NextPage = () => {
       newVx = -PLAYER_VX;
     }
 
-    gameState.current.players[index].vx = newVx;
+    player.vx = newVx;
   }, []);
+
+  // Listen for buzzer presses
+  useEffect(() => {
+    if (DEBUG) {
+      // When running in the browser, EventsOn is undefined
+      return;
+    }
+    const cancel = EventsOn('press', (id: string) => {
+      handleJump(id);
+    });
+    return cancel;
+  }, [handleJump]);
 
   // Button press event listener
   useEffect(() => {
@@ -706,16 +734,19 @@ const NinjaRun: NextPage = () => {
           router.push('/');
           break;
         case 'KeyA':
-          handleJump(0);
+          handleJump('1');
           break;
         case 'KeyS':
-          handleJump(1);
+          handleJump('2');
           break;
         case 'KeyD':
-          handleJump(2);
+          handleJump('3');
           break;
         case 'KeyF':
-          handleJump(3);
+          handleJump('4');
+          break;
+        case 'Space':
+          handleJump('Keyboard');
           break;
       }
     };
