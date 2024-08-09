@@ -2,9 +2,16 @@ import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+import { ListTeams } from '../wailsjs/wailsjs/go/main/App';
+import { main } from '../wailsjs/wailsjs/go/models';
+
+const DEBUG = true;
+
 //
 // Types
 //
+type Team = main.Team;
+
 type Player = {
   x: number;
   y: number;
@@ -188,48 +195,48 @@ const ObstacleSprite = ({ x, y, currentFrame }: Obstacle) => {
 
 const GameScreen = ({ player, obstacles }: GameScreenState) => (
   <div style={{ margin: 16 }}>
-  <div
-    style={{
-      width: GAME_WIDTH,
-      height: GAME_HEIGHT,
-      backgroundColor: 'white',
-        // border: '1px solid #323232',
-        borderBottom: 'none', // Remove bottom border to connect with color bar
-      position: 'relative',
-      overflow: 'hidden',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-    }}
-  >
     <div
       style={{
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        fontFamily: 'Courier New',
-        fontSize: 16,
-          zIndex: 2,
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        width: GAME_WIDTH,
+        height: GAME_HEIGHT,
+        backgroundColor: 'white',
+        // border: '1px solid #323232',
+        borderBottom: 'none', // Remove bottom border to connect with color bar
+        position: 'relative',
+        overflow: 'hidden',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
       }}
     >
-      {player.score}
-    </div>
-    {player.isGameOver && (
       <div
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          fontFamily: 'Courier New',
+          fontSize: 16,
+          zIndex: 2,
+          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        }}
+      >
+        {player.score}
+      </div>
+      {player.isGameOver && (
+        <div
           style={{
             fontFamily: 'Courier New',
             fontSize: 24,
             fontWeight: 'bold',
           }}
-      >
-        GAME OVER
-      </div>
-    )}
-    <PlayerSprite {...player} />
-    {obstacles.map((obstacle, index) => (
-      <ObstacleSprite key={index} {...obstacle} />
-    ))}
+        >
+          GAME OVER
+        </div>
+      )}
+      <PlayerSprite {...player} />
+      {obstacles.map((obstacle, index) => (
+        <ObstacleSprite key={index} {...obstacle} />
+      ))}
     </div>
     <div
       style={{
@@ -362,6 +369,21 @@ const NinjaRun: NextPage = () => {
   const router = useRouter();
   const [, setRenderTrigger] = useState({});
   const [playAgainDisabled, setPlayAgainDisabled] = useState(true);
+
+  const [teams, setTeams] = useState([] as Team[]);
+  // Get teams from backend
+  useEffect(() => {
+    if (DEBUG) {
+      return;
+    }
+
+    ListTeams()
+      .then((teams) => {
+        setTeams(teams);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
   const gameState = useRef<GameState>({
     players: [],
     // Same obstacles used for all players. player.obstacles is usually a reference to the list in the pool
@@ -698,19 +720,19 @@ const NinjaRun: NextPage = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#323232]">
       {gameState.current.players.length === 0 && (
-      <div className="text-center text-white">
-        <h2
-          style={{
-            fontFamily: 'Courier New',
-            fontSize:
-              gameState.current.players.length === 0 ? '4rem' : '2.25rem',
-            marginBottom:
-              gameState.current.players.length === 0 ? '2rem' : '0.5rem',
-          }}
-        >
-          NINJA RUN
-        </h2>
-      </div>
+        <div className="text-center text-white">
+          <h2
+            style={{
+              fontFamily: 'Courier New',
+              fontSize:
+                gameState.current.players.length === 0 ? '4rem' : '2.25rem',
+              marginBottom:
+                gameState.current.players.length === 0 ? '2rem' : '0.5rem',
+            }}
+          >
+            NINJA RUN
+          </h2>
+        </div>
       )}
       <div className="flex">
         {gameState.current.players.map((player, index) => (
