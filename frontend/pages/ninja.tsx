@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ListTeams } from '../wailsjs/wailsjs/go/main/App';
-import { EventsOn } from '../wailsjs/wailsjs/runtime/runtime';
+import { EventsOn, WindowFullscreen } from '../wailsjs/wailsjs/runtime/runtime';
 
 // Use dummy players. When false, calls ListTeams to get real players
 const DEBUG = true;
@@ -400,6 +400,14 @@ const NinjaRun: NextPage = () => {
     // Set when start game button is pressed
     gameStartTime: 0,
   });
+
+  // Fullscreen window
+  useEffect(() => {
+    if (DEBUG) {
+      return;
+    }
+    WindowFullscreen();
+  }, []);
 
   // Get teams from backend
   useEffect(() => {
