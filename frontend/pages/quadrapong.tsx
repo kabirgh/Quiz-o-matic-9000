@@ -8,18 +8,20 @@ const WALL_THICKNESS = PADDLE_HEIGHT;
 const WALL_LENGTH = 80;
 const WALL_OFFSET = 8;
 const PADDLE_OFFSET = WALL_OFFSET + WALL_THICKNESS + 8;
-// Let the paddle stop 4 pixels from the wall
+// Let the player stop 4 pixels from the wall
 const PADDLE_STOP = WALL_OFFSET + WALL_THICKNESS + 4;
 const BALL_SIZE = 8;
 const INITIAL_BALL_SPEED = 3;
 const PADDLE_SPEED = 15;
 const GRACE_DIST = 1;
 
-type Paddle = {
+type Player = {
   x: number;
   y: number;
-  vertical: boolean;
+  name: string;
   color: string;
+  position: 'top' | 'bottom' | 'left' | 'right';
+  score: number;
 };
 
 type Ball = {
@@ -32,10 +34,13 @@ type Ball = {
 
 type State = {
   walls: { x: number; y: number; width: number; height: number }[];
-  paddles: Paddle[];
+  players: Player[];
   ball: Ball;
-  score: { top: number; bottom: number; left: number; right: number };
   keys: { [key: string]: boolean };
+};
+
+const roundBetween = (num: number, min: number, max: number) => {
+  return Math.round((num - min) / (max - min)) * (max - min) + min;
 };
 
 const Quadrapong: NextPage = () => {
@@ -92,30 +97,38 @@ const Quadrapong: NextPage = () => {
         height: WALL_THICKNESS,
       },
     ],
-    paddles: [
+    players: [
       {
         x: CANVAS_SIZE / 2 - PADDLE_WIDTH / 2,
         y: 0 + PADDLE_OFFSET,
-        vertical: false,
+        position: 'top',
+        name: 'top',
         color: '#E8293C',
+        score: 4,
       },
       {
         x: CANVAS_SIZE / 2 - PADDLE_WIDTH / 2,
         y: CANVAS_SIZE - PADDLE_HEIGHT - PADDLE_OFFSET,
-        vertical: false,
+        position: 'bottom',
+        name: 'bottom',
         color: '#5596E6',
+        score: 4,
       },
       {
         x: 0 + PADDLE_OFFSET,
         y: CANVAS_SIZE / 2 - PADDLE_WIDTH / 2,
-        vertical: true,
+        position: 'left',
+        name: 'left',
         color: '#00B4A0',
+        score: 4,
       },
       {
         x: CANVAS_SIZE - PADDLE_HEIGHT - PADDLE_OFFSET,
         y: CANVAS_SIZE / 2 - PADDLE_WIDTH / 2,
-        vertical: true,
+        position: 'right',
+        name: 'right',
         color: '#FDD600',
+        score: 4,
       },
     ],
     ball: {
@@ -125,7 +138,6 @@ const Quadrapong: NextPage = () => {
       dy: INITIAL_BALL_SPEED * Math.cos(initialAngle),
       speed: INITIAL_BALL_SPEED,
     },
-    score: { top: 0, bottom: 0, left: 0, right: 0 },
     keys: {
       a: false,
       d: false,
@@ -148,25 +160,24 @@ const Quadrapong: NextPage = () => {
     let animationFrameId: number;
 
     const update = () => {
-      const { ball, keys, paddles, walls } = stateRef.current;
+      const { ball, keys, players, walls } = stateRef.current;
 
-      // Move paddles
-      const paddle = paddles[1];
+      // Move players
+      const player = players[1];
 
       switch (true) {
         case keys.a:
-          paddle.x = Math.max(PADDLE_STOP, paddle.x - PADDLE_SPEED);
+          player.x = Math.max(PADDLE_STOP, player.x - PADDLE_SPEED);
           break;
         case keys.d:
-          paddle.x = Math.min(
+          player.x = Math.min(
             CANVAS_SIZE - PADDLE_WIDTH - PADDLE_STOP,
-            paddle.x + PADDLE_SPEED,
+            player.x + PADDLE_SPEED,
           );
           break;
       }
 
       // Move ball
-      // TODO mimic atari pong ball physics
       ball.x += ball.dx;
       ball.y += ball.dy;
 
@@ -177,25 +188,34 @@ const Quadrapong: NextPage = () => {
         ball.y + BALL_SIZE,
       ];
 
-      // Collision with paddles
-      for (const paddle of paddles) {
-        if (paddle.vertical) {
+      // Collision with players
+      for (const player of players) {
+        if (player.position === 'left' || player.position === 'right') {
           if (
-            // bottom of ball > top of paddle
-            bb + GRACE_DIST > paddle.y &&
-            // top of ball < bottom of paddle
-            bt - GRACE_DIST < paddle.y + PADDLE_WIDTH &&
-            Math.abs(ball.x - paddle.x) < BALL_SIZE / 2 + PADDLE_HEIGHT / 2
+            // bottom of ball > top of player
+            bb + GRACE_DIST > player.y &&
+            // top of ball < bottom of player
+            bt - GRACE_DIST < player.y + PADDLE_WIDTH &&
+            Math.abs(ball.x - player.x) < BALL_SIZE / 2 + PADDLE_HEIGHT / 2
           ) {
-            // Angle ranges from -60 to 60 deg based on distance from center of paddle
-            // [-1, 1] where -1 is top edge of paddle and 1 is bottom edge of paddle
+            // If ball is inside player, move it towards the game area
+            if (
+              player.position === 'left' &&
+              ball.x < player.x + PADDLE_HEIGHT
+            ) {
+              ball.x = player.x + PADDLE_HEIGHT;
+            } else if (player.position === 'right' && ball.x > player.x) {
+              ball.x = player.x;
+            }
+            // Angle ranges from -60 to 60 deg based on distance from center of player
+            // [-1, 1] where -1 is top edge of player and 1 is bottom edge of player
             const angle =
-              (((ball.y + BALL_SIZE / 2 - paddle.y - PADDLE_WIDTH / 2) /
+              (((ball.y + BALL_SIZE / 2 - player.y - PADDLE_WIDTH / 2) /
                 (PADDLE_WIDTH / 2)) *
                 Math.PI) /
               3;
             // x negative if should move left, positive if should move right
-            const sign = Math.sign(ball.x - paddle.x);
+            const sign = Math.sign(ball.x - player.x);
 
             // For a reflection like
             // |  /|
@@ -213,18 +233,28 @@ const Quadrapong: NextPage = () => {
           }
         } else {
           if (
-            // right of ball > left of paddle
-            br + GRACE_DIST > paddle.x &&
-            // left of ball < right of paddle
-            bl - GRACE_DIST < paddle.x + PADDLE_WIDTH &&
-            Math.abs(ball.y - paddle.y) < BALL_SIZE / 2 + PADDLE_HEIGHT / 2
+            // right of ball > left of player
+            br + GRACE_DIST > player.x &&
+            // left of ball < right of player
+            bl - GRACE_DIST < player.x + PADDLE_WIDTH &&
+            Math.abs(ball.y - player.y) < BALL_SIZE / 2 + PADDLE_HEIGHT / 2
           ) {
+            // If ball is inside player, move it towards the game area
+            if (
+              player.position === 'top' &&
+              ball.y < player.y + PADDLE_HEIGHT
+            ) {
+              ball.y = player.y + PADDLE_HEIGHT;
+            } else if (player.position === 'bottom' && ball.y > player.y) {
+              ball.y = player.y;
+            }
+
             const angle =
-              (((ball.x + BALL_SIZE / 2 - paddle.x - PADDLE_WIDTH / 2) /
+              (((ball.x + BALL_SIZE / 2 - player.x - PADDLE_WIDTH / 2) /
                 (PADDLE_WIDTH / 2)) *
                 Math.PI) /
               3;
-            const sign = Math.sign(ball.y - paddle.y);
+            const sign = Math.sign(ball.y - player.y);
             ball.speed *= 1.1;
             ball.dx = ball.speed * Math.sin(angle);
             ball.dy = ball.speed * Math.cos(angle) * sign;
@@ -233,7 +263,7 @@ const Quadrapong: NextPage = () => {
       }
 
       // Collision with walls
-      // Unlike paddle collision, this is always a standard reflection
+      // Unlike player collision, this is always a standard reflection
       for (const wall of walls) {
         if (
           // right of ball > left of wall
@@ -287,13 +317,13 @@ const Quadrapong: NextPage = () => {
         ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
       }
 
-      // Draw paddles
+      // Draw players
       ctx.fillStyle = 'white';
-      for (const paddle of state.paddles) {
-        if (paddle.vertical) {
-          ctx.fillRect(paddle.x, paddle.y, PADDLE_HEIGHT, PADDLE_WIDTH);
+      for (const player of state.players) {
+        if (player.position === 'left' || player.position === 'right') {
+          ctx.fillRect(player.x, player.y, PADDLE_HEIGHT, PADDLE_WIDTH);
         } else {
-          ctx.fillRect(paddle.x, paddle.y, PADDLE_WIDTH, PADDLE_HEIGHT);
+          ctx.fillRect(player.x, player.y, PADDLE_WIDTH, PADDLE_HEIGHT);
         }
       }
 
