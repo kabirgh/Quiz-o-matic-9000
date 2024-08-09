@@ -475,6 +475,14 @@ const NinjaRun: NextPage = () => {
     setInitialScreen(false);
   }, []);
 
+  useEffect(() => {
+    // Preload images to avoid flickering
+    for (const animation of Object.values(ANIMATIONS)) {
+      const img = new Image();
+      img.src = animation.url;
+    }
+  }, []);
+
   const updateGameSpeed = useCallback((_deltaTime: number) => {
     const state = gameState.current;
     // Gradually increase the speed of the obstacles

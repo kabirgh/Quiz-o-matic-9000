@@ -186,6 +186,7 @@ const Game: NextPage = () => {
         ref={audioRef}
         src="/audio/bell.mp3"
         style={{ display: 'none' }}
+        preload="auto"
       ></audio>
     </div>
   );
