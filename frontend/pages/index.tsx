@@ -127,10 +127,14 @@ const Main: NextPage = () => {
     const keydownHandler = (event: any) => {
       switch (event.code) {
         case 'KeyF':
-          setFullscreen((prev) => !prev);
+          if (event.shiftKey) {
+            setFullscreen((prev) => !prev);
+          }
           break;
         case 'KeyN':
-          router.push('/ninja');
+          if (event.shiftKey) {
+            router.push('/ninja');
+          }
           break;
         case 'Space':
           handleBuzzerPress('Keyboard');
@@ -261,24 +265,27 @@ const Main: NextPage = () => {
               }}
               value={team.buzzerId || 'None'}
             >
-              {buzzerIds.concat('None').map((buzzerId, buzzerIndex) => {
-                const selectedBuzzerIds = teams
-                  .filter((_t, idx) => idx != index)
-                  .map((t) => t.buzzerId);
+              {buzzerIds
+                .concat('None')
+                .concat('dummy')
+                .map((buzzerId, buzzerIndex) => {
+                  const selectedBuzzerIds = teams
+                    .filter((_t, idx) => idx != index)
+                    .map((t) => t.buzzerId);
 
-                return (
-                  <option
-                    key={buzzerIndex}
-                    value={buzzerId}
-                    disabled={
-                      selectedBuzzerIds.includes(buzzerId) &&
-                      buzzerId !== 'None'
-                    }
-                  >
-                    {buzzerId}
-                  </option>
-                );
-              })}
+                  return (
+                    <option
+                      key={buzzerIndex}
+                      value={buzzerId}
+                      disabled={
+                        selectedBuzzerIds.includes(buzzerId) &&
+                        buzzerId !== 'None'
+                      }
+                    >
+                      {buzzerId}
+                    </option>
+                  );
+                })}
             </select>
           </Fragment>
         );
