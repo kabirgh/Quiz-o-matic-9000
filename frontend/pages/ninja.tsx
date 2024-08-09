@@ -258,8 +258,8 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
 //
 // Constants
 //
-const GAME_HEIGHT = 540;
-const GAME_WIDTH = 300;
+const GAME_HEIGHT = 560;
+const GAME_WIDTH = 320;
 
 const OBSTACLE_SIZE = 48;
 const OBSTACLE_MIN_GAP = 220;
@@ -277,7 +277,7 @@ const DEFAULT_OBSTACLES: Obstacle[] = [
 // PLAYER_SIZE == width/height of the sprite character including empty space
 // Hitbox calculations should use values in ANIMATIONS
 const PLAYER_SIZE = 72;
-const PLAYER_VX = 1;
+const PLAYER_VX = 1.2;
 
 const DEFAULT_PLAYERS: Player[] = [
   {

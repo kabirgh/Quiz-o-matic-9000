@@ -290,27 +290,24 @@ const Main: NextPage = () => {
               }}
               value={team.buzzerId || 'None'}
             >
-              {buzzerIds
-                .concat('None')
-                .concat('dummy')
-                .map((buzzerId, buzzerIndex) => {
-                  const selectedBuzzerIds = teams
-                    .filter((_t, idx) => idx != index)
-                    .map((t) => t.buzzerId);
+              {buzzerIds.concat('None').map((buzzerId, buzzerIndex) => {
+                const selectedBuzzerIds = teams
+                  .filter((_t, idx) => idx != index)
+                  .map((t) => t.buzzerId);
 
-                  return (
-                    <option
-                      key={buzzerIndex}
-                      value={buzzerId}
-                      disabled={
-                        selectedBuzzerIds.includes(buzzerId) &&
-                        buzzerId !== 'None'
-                      }
-                    >
-                      {buzzerId}
-                    </option>
-                  );
-                })}
+                return (
+                  <option
+                    key={buzzerIndex}
+                    value={buzzerId}
+                    disabled={
+                      selectedBuzzerIds.includes(buzzerId) &&
+                      buzzerId !== 'None'
+                    }
+                  >
+                    {buzzerId}
+                  </option>
+                );
+              })}
             </select>
           </Fragment>
         );
