@@ -46,6 +46,8 @@ type GameState = {
   speedLastUpdated: number;
   obstacleBag: number[];
   lastTick: number;
+  // not_started is only at before the first game starts
+  phase: 'not_started' | 'in_progress' | 'game_over';
   gameStartTime: number;
 };
 
@@ -195,7 +197,7 @@ const ObstacleSprite = ({ x, y, currentFrame }: Obstacle) => {
 };
 
 const GameScreen = ({ player, obstacles }: GameScreenState) => (
-  <div style={{ margin: 16 }}>
+  <div style={{ margin: 24 }}>
     <div
       style={{
         width: GAME_WIDTH,
@@ -294,7 +296,7 @@ const DEFAULT_PLAYERS: Player[] = [
     isGameOver: false,
     currentAnimation: 'run',
     wall: 'left',
-    currentFrame: 0,
+    currentFrame: 3,
     lastFrameUpdate: Date.now(),
   },
   {
@@ -309,7 +311,7 @@ const DEFAULT_PLAYERS: Player[] = [
     isGameOver: false,
     currentAnimation: 'run',
     wall: 'left',
-    currentFrame: 0,
+    currentFrame: 3,
     lastFrameUpdate: Date.now(),
   },
   {
@@ -324,7 +326,7 @@ const DEFAULT_PLAYERS: Player[] = [
     isGameOver: false,
     currentAnimation: 'run',
     wall: 'left',
-    currentFrame: 0,
+    currentFrame: 3,
     lastFrameUpdate: Date.now(),
   },
   {
@@ -339,7 +341,7 @@ const DEFAULT_PLAYERS: Player[] = [
     isGameOver: false,
     currentAnimation: 'run',
     wall: 'left',
-    currentFrame: 0,
+    currentFrame: 3, // 3 looks nicest
     lastFrameUpdate: Date.now(),
   },
 ];
@@ -384,9 +386,8 @@ const ANIMATIONS = {
 const NinjaRun: NextPage = () => {
   const router = useRouter();
   const [, setRenderTrigger] = useState({});
-  const [initialScreen, setInitialScreen] = useState(true);
+  const [firstGame, setFirstGame] = useState(true);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
-  const [playButtonDisabled, setPlayButtonDisabled] = useState(true);
 
   const gameState = useRef<GameState>({
     players: [],
@@ -397,6 +398,7 @@ const NinjaRun: NextPage = () => {
     // Ensure we don't choose the same side for new obstacles too many times in a row
     obstacleBag: [...OBSTACLE_BAG_DEFAULT],
     lastTick: 0,
+    phase: 'not_started',
     // Set when start game button is pressed
     gameStartTime: 0,
   });
@@ -411,24 +413,17 @@ const NinjaRun: NextPage = () => {
 
   // Get teams from backend
   useEffect(() => {
+    const state = gameState.current;
+
     if (DEBUG) {
-      gameState.current = {
-        players: structuredClone(DEFAULT_PLAYERS),
-        obstaclePool: new ObstaclePool(20),
-        speed: 0.15,
-        speedLastUpdated: Date.now(),
-        obstacleBag: [...OBSTACLE_BAG_DEFAULT],
-        lastTick: 0,
-        gameStartTime: Date.now(),
-      };
+      state.players = structuredClone(DEFAULT_PLAYERS);
       setLoadingPlayers(false);
-      setPlayButtonDisabled(false);
       return;
     }
 
     ListTeams()
       .then((teams) => {
-        gameState.current.players = teams.map((team) => ({
+        state.players = teams.map((team) => ({
           name: team.name,
           color: team.color,
           buzzerId: team.buzzerId || '',
@@ -444,12 +439,11 @@ const NinjaRun: NextPage = () => {
           lastFrameUpdate: Date.now(),
         }));
         setLoadingPlayers(false);
-        setPlayButtonDisabled(false);
       })
       .catch((err) => console.error(err));
   }, []);
 
-  const reset = useCallback(() => {
+  const start = useCallback(() => {
     gameState.current = {
       players: gameState.current.players.map((player) => ({
         ...player,
@@ -469,10 +463,10 @@ const NinjaRun: NextPage = () => {
       speedLastUpdated: Date.now(),
       obstacleBag: [...OBSTACLE_BAG_DEFAULT],
       lastTick: 0,
+      phase: 'in_progress',
       gameStartTime: Date.now(),
     };
-    setPlayButtonDisabled(true);
-    setInitialScreen(false);
+    setFirstGame(false);
   }, []);
 
   useEffect(() => {
@@ -497,6 +491,11 @@ const NinjaRun: NextPage = () => {
     const state = gameState.current;
     const now = Date.now();
 
+    // Don't update obstacles if game hasn't started
+    if (state.phase === 'not_started') {
+      return;
+    }
+
     // Don't update obstacles if all players are game over
     let isGameOverForAll = true;
     for (const player of state.players) {
@@ -506,7 +505,7 @@ const NinjaRun: NextPage = () => {
       }
     }
     if (isGameOverForAll) {
-      setPlayButtonDisabled(false);
+      state.phase = 'game_over';
       return;
     }
 
@@ -562,6 +561,12 @@ const NinjaRun: NextPage = () => {
   const updatePlayers = useCallback((deltaTime: number) => {
     const state = gameState.current;
     const now = Date.now();
+
+    // Don't update players if game hasn't started
+    // 'game_over' phase is handle implicitly
+    if (state.phase === 'not_started') {
+      return;
+    }
 
     for (const player of state.players) {
       if (player.isGameOver) {
@@ -809,38 +814,26 @@ const NinjaRun: NextPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#323232]">
-      {/* Initial screen should probably be a different component */}
-      {initialScreen && (
-        <div className="text-center text-white">
-          <h2
-            style={{
-              fontFamily: 'Courier New',
-              fontSize: '4rem',
-              marginBottom: '2rem',
-            }}
-          >
-            NINJA RUN
-          </h2>
-        </div>
-      )}
-      {!initialScreen && (
-        <div className="flex">
-          {gameState.current.players.map((player, index) => (
-            <GameScreen
-              key={index}
-              player={player}
-              obstacles={player.obstacles}
-            />
-          ))}
-        </div>
-      )}
+      <div className="flex">
+        {gameState.current.players.map((player, index) => (
+          <GameScreen
+            key={index}
+            player={player}
+            obstacles={player.obstacles}
+          />
+        ))}
+      </div>
       <div>
         <button
-          className="text-sm px-3 py-1 mb-0"
-          disabled={playButtonDisabled || loadingPlayers}
-          onClick={() => reset()}
+          className="text-sm px-3 py-1 mb-0 mt-2"
+          style={{
+            visibility:
+              gameState.current.phase === 'in_progress' ? 'hidden' : 'visible',
+          }}
+          disabled={loadingPlayers}
+          onClick={() => start()}
         >
-          {initialScreen ? 'Start' : 'Play again'}
+          {firstGame ? 'Start' : 'Play again'}
         </button>
       </div>
     </div>
