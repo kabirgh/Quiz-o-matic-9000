@@ -84,6 +84,28 @@ const Main: NextPage = () => {
       .catch((err) => console.error(err));
   }, []);
 
+  // Returns true if successful, false if there are errors
+  const validateAndSaveTeams = useCallback((): boolean => {
+    const nameValidities = teams.map((t) => {
+      return t !== null && t.name.trim() === '' ? false : true;
+    });
+    if (!nameValidities.every((v) => v === true)) {
+      setNameInputValid(Object.assign({}, nameValidities));
+      return false;
+    }
+
+    const anyNoneBuzzers = teams
+      .map((t) => t.buzzerId)
+      .filter((b) => b == 'None' || b == undefined);
+    if (anyNoneBuzzers.length > 0) {
+      alert('All teams must have a buzzer');
+      return false;
+    }
+
+    SaveTeams(teams);
+    return true;
+  }, [teams]);
+
   // Listen for buzzers
   useEffect(() => {
     // Get existing buzzers if already connected
@@ -133,7 +155,10 @@ const Main: NextPage = () => {
           break;
         case 'KeyN':
           if (event.shiftKey) {
-            router.push('/ninja');
+            const success = validateAndSaveTeams();
+            if (success) {
+              router.push('/ninja');
+            }
           }
           break;
         case 'Space':
@@ -146,7 +171,7 @@ const Main: NextPage = () => {
     return () => {
       removeEventListener('keydown', keydownHandler);
     };
-  }, [handleBuzzerPress, router]);
+  }, [handleBuzzerPress, router, validateAndSaveTeams]);
 
   const getNextUnusedColor = (): Color => {
     const color = Object.values(Color).filter(
@@ -360,25 +385,10 @@ const Main: NextPage = () => {
         id="start-btn"
         style={{ gridArea: '22/col-startbtn-start/23/col-startbtn-end' }}
         onClick={() => {
-          const nameValidities = teams.map((t) => {
-            return t !== null && t.name.trim() === '' ? false : true;
-          });
-          if (!nameValidities.every((v) => v === true)) {
-            setNameInputValid(Object.assign({}, nameValidities));
-            return;
+          const success = validateAndSaveTeams();
+          if (success) {
+            router.push('/game');
           }
-
-          const anyNoneBuzzers = teams
-            .map((t) => t.buzzerId)
-            .filter((b) => b == 'None' || b == undefined);
-          if (anyNoneBuzzers.length > 0) {
-            alert('All teams must have a buzzer');
-            return;
-          }
-
-          SaveTeams(teams);
-
-          router.push('/game');
         }}
       >
         Start

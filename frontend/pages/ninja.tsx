@@ -3,16 +3,15 @@ import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ListTeams } from '../wailsjs/wailsjs/go/main/App';
-import { main } from '../wailsjs/wailsjs/go/models';
 
-const DEBUG = true;
+// Use dummy players. When false, calls ListTeams to get real players
+const DEBUG = false;
 
 //
 // Types
 //
-type Team = main.Team;
-
 type Player = {
+  name: string;
   x: number;
   y: number;
   vx: number;
@@ -238,14 +237,21 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
         <ObstacleSprite key={index} {...obstacle} />
       ))}
     </div>
+    {/* Color bar */}
     <div
       style={{
         width: GAME_WIDTH,
-        height: 30,
+        height: 32,
         backgroundColor: player.color,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        font: '14px Arvo',
         // border: `1px solid ${player.color}`,
       }}
-    />
+    >
+      {player.name}
+    </div>
   </div>
 );
 
@@ -275,6 +281,7 @@ const PLAYER_VX = 1;
 
 const DEFAULT_PLAYERS: Player[] = [
   {
+    name: 'Player 1',
     x: 0,
     y: GAME_HEIGHT * 0.7,
     vx: 0,
@@ -288,6 +295,7 @@ const DEFAULT_PLAYERS: Player[] = [
     lastFrameUpdate: Date.now(),
   },
   {
+    name: 'Lizard Wizard',
     x: 0,
     y: GAME_HEIGHT * 0.7,
     vx: 0,
@@ -301,6 +309,7 @@ const DEFAULT_PLAYERS: Player[] = [
     lastFrameUpdate: Date.now(),
   },
   {
+    name: 'Surprise Entrant',
     x: 0,
     y: GAME_HEIGHT * 0.7,
     vx: 0,
@@ -314,6 +323,7 @@ const DEFAULT_PLAYERS: Player[] = [
     lastFrameUpdate: Date.now(),
   },
   {
+    name: 'Bonk',
     x: 0,
     y: GAME_HEIGHT * 0.7,
     vx: 0,
@@ -368,21 +378,9 @@ const ANIMATIONS = {
 const NinjaRun: NextPage = () => {
   const router = useRouter();
   const [, setRenderTrigger] = useState({});
-  const [playAgainDisabled, setPlayAgainDisabled] = useState(true);
-
-  const [teams, setTeams] = useState([] as Team[]);
-  // Get teams from backend
-  useEffect(() => {
-    if (DEBUG) {
-      return;
-    }
-
-    ListTeams()
-      .then((teams) => {
-        setTeams(teams);
-      })
-      .catch((err) => console.error(err));
-  }, []);
+  const [initialScreen, setInitialScreen] = useState(true);
+  const [loadingPlayers, setLoadingPlayers] = useState(true);
+  const [playButtonDisabled, setPlayButtonDisabled] = useState(true);
 
   const gameState = useRef<GameState>({
     players: [],
@@ -397,15 +395,59 @@ const NinjaRun: NextPage = () => {
     gameStartTime: 0,
   });
 
+  // Get teams from backend
+  useEffect(() => {
+    if (DEBUG) {
+      gameState.current = {
+        players: structuredClone(DEFAULT_PLAYERS),
+        obstaclePool: new ObstaclePool(20),
+        speed: 0.15,
+        speedLastUpdated: Date.now(),
+        obstacleBag: [...OBSTACLE_BAG_DEFAULT],
+        lastTick: 0,
+        gameStartTime: Date.now(),
+      };
+      setLoadingPlayers(false);
+      setPlayButtonDisabled(false);
+      return;
+    }
+
+    ListTeams()
+      .then((teams) => {
+        gameState.current.players = teams.map((team) => ({
+          name: team.name,
+          color: team.color,
+          y: GAME_HEIGHT * 0.7,
+          x: 0,
+          vx: 0,
+          score: 0,
+          obstacles: [],
+          isGameOver: false,
+          currentAnimation: 'run',
+          wall: 'left',
+          currentFrame: 0,
+          lastFrameUpdate: Date.now(),
+        }));
+        setLoadingPlayers(false);
+        setPlayButtonDisabled(false);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
   const reset = useCallback(() => {
     gameState.current = {
-      players: structuredClone(DEFAULT_PLAYERS).map((player) => ({
+      players: gameState.current.players.map((player) => ({
         ...player,
-        // Explicitly reset the score to 0
-        // Workaround because I can't be bothered to figure out why
-        // structuredClone doesn't reset all props
-        // Probably some shallow copy somewhere
+        y: GAME_HEIGHT * 0.7,
+        x: 0,
+        vx: 0,
         score: 0,
+        obstacles: [],
+        isGameOver: false,
+        currentAnimation: 'run',
+        wall: 'left',
+        currentFrame: 0,
+        lastFrameUpdate: Date.now(),
       })),
       obstaclePool: new ObstaclePool(20),
       speed: 0.15,
@@ -414,7 +456,8 @@ const NinjaRun: NextPage = () => {
       lastTick: 0,
       gameStartTime: Date.now(),
     };
-    setPlayAgainDisabled(true);
+    setPlayButtonDisabled(true);
+    setInitialScreen(false);
   }, []);
 
   const updateGameSpeed = useCallback((_deltaTime: number) => {
@@ -440,7 +483,7 @@ const NinjaRun: NextPage = () => {
       }
     }
     if (isGameOverForAll) {
-      setPlayAgainDisabled(false);
+      setPlayButtonDisabled(false);
       return;
     }
 
@@ -719,42 +762,40 @@ const NinjaRun: NextPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#323232]">
-      {gameState.current.players.length === 0 && (
+      {/* Initial screen should probably be a different component */}
+      {initialScreen && (
         <div className="text-center text-white">
           <h2
             style={{
               fontFamily: 'Courier New',
-              fontSize:
-                gameState.current.players.length === 0 ? '4rem' : '2.25rem',
-              marginBottom:
-                gameState.current.players.length === 0 ? '2rem' : '0.5rem',
+              fontSize: '4rem',
+              marginBottom: '2rem',
             }}
           >
             NINJA RUN
           </h2>
         </div>
       )}
-      <div className="flex">
-        {gameState.current.players.map((player, index) => (
-          <GameScreen
-            key={index}
-            player={player}
-            obstacles={player.obstacles}
-          />
-        ))}
-      </div>
-      {/* Should be a different component */}
-      {gameState.current.players.length === 0 && (
-        <div>
-          <button
-            className="text-sm px-3 py-1 mb-0"
-            disabled={playAgainDisabled}
-            onClick={() => reset()}
-          >
-            {gameState.current.players.length === 0 ? 'Start' : 'Play again'}
-          </button>
+      {!initialScreen && (
+        <div className="flex">
+          {gameState.current.players.map((player, index) => (
+            <GameScreen
+              key={index}
+              player={player}
+              obstacles={player.obstacles}
+            />
+          ))}
         </div>
       )}
+      <div>
+        <button
+          className="text-sm px-3 py-1 mb-0"
+          disabled={playButtonDisabled || loadingPlayers}
+          onClick={() => reset()}
+        >
+          {initialScreen ? 'Start' : 'Play again'}
+        </button>
+      </div>
     </div>
   );
 };
