@@ -38,6 +38,7 @@ type GameState = {
   speedLastUpdated: number;
   obstacleBag: number[];
   lastTick: number;
+  gameStartTime: number;
 };
 
 class ObstaclePool {
@@ -138,16 +139,16 @@ const PlayerSprite = ({
           // border: `1px solid black`,
         }}
       ></div>
-      <div
+      {/* <div
         style={{
           position: 'absolute',
           left: wall === 'left' ? x + hitbox.yb : x + hitbox.yt,
           top: y + hitbox.xf,
           width: PLAYER_SIZE - hitbox.yt - hitbox.yb,
           height: PLAYER_SIZE - hitbox.xf - hitbox.xb,
-          // border: '1px solid blue',
+          border: '1px solid blue',
         }}
-      ></div>
+      ></div> */}
     </>
   );
 };
@@ -171,30 +172,31 @@ const ObstacleSprite = ({ x, y, currentFrame }: Obstacle) => {
           // border: `1px solid black`,
         }}
       ></div>
-      <div
+      {/* <div
         style={{
           position: 'absolute',
           left: x + hitbox.xb,
           top: y + hitbox.yt,
           width: OBSTACLE_SIZE - hitbox.xb - hitbox.xf,
           height: OBSTACLE_SIZE - hitbox.yt - hitbox.yb,
-          // border: '1px solid blue',
+          border: '1px solid blue',
         }}
-      ></div>
+      ></div> */}
     </>
   );
 };
 
 const GameScreen = ({ player, obstacles }: GameScreenState) => (
+  <div style={{ margin: 16 }}>
   <div
     style={{
       width: GAME_WIDTH,
       height: GAME_HEIGHT,
       backgroundColor: 'white',
-      border: '1px solid black',
+        // border: '1px solid #323232',
+        borderBottom: 'none', // Remove bottom border to connect with color bar
       position: 'relative',
       overflow: 'hidden',
-      margin: 16,
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
@@ -207,7 +209,7 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
         right: 8,
         fontFamily: 'Courier New',
         fontSize: 16,
-        zIndex: 2, // show over sprites
+          zIndex: 2,
         backgroundColor: 'rgba(255, 255, 255, 0.7)',
       }}
     >
@@ -215,7 +217,11 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
     </div>
     {player.isGameOver && (
       <div
-        style={{ fontFamily: 'Courier New', fontSize: 24, fontWeight: 'bold' }}
+          style={{
+            fontFamily: 'Courier New',
+            fontSize: 24,
+            fontWeight: 'bold',
+          }}
       >
         GAME OVER
       </div>
@@ -224,6 +230,15 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
     {obstacles.map((obstacle, index) => (
       <ObstacleSprite key={index} {...obstacle} />
     ))}
+    </div>
+    <div
+      style={{
+        width: GAME_WIDTH,
+        height: 30,
+        backgroundColor: player.color,
+        // border: `1px solid ${player.color}`,
+      }}
+    />
   </div>
 );
 
@@ -240,7 +255,7 @@ const OBSTACLE_BAG_DEFAULT = shuffle([0, 0, 1, 1]);
 const DEFAULT_OBSTACLES: Obstacle[] = [
   {
     x: 0,
-    y: 0,
+    y: -OBSTACLE_SIZE,
     currentFrame: 0,
     lastFrameUpdate: 0,
   },
@@ -356,6 +371,8 @@ const NinjaRun: NextPage = () => {
     // Ensure we don't choose the same side for new obstacles too many times in a row
     obstacleBag: [...OBSTACLE_BAG_DEFAULT],
     lastTick: 0,
+    // Set when start game button is pressed
+    gameStartTime: 0,
   });
 
   const reset = useCallback(() => {
@@ -373,6 +390,7 @@ const NinjaRun: NextPage = () => {
       speedLastUpdated: Date.now(),
       obstacleBag: [...OBSTACLE_BAG_DEFAULT],
       lastTick: 0,
+      gameStartTime: Date.now(),
     };
     setPlayAgainDisabled(true);
   }, []);
@@ -401,6 +419,11 @@ const NinjaRun: NextPage = () => {
     }
     if (isGameOverForAll) {
       setPlayAgainDisabled(false);
+      return;
+    }
+
+    // Don't spawn or update obstacles for the first few seconds
+    if (now - state.gameStartTime < 2000) {
       return;
     }
 
@@ -674,6 +697,7 @@ const NinjaRun: NextPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#323232]">
+      {gameState.current.players.length === 0 && (
       <div className="text-center text-white">
         <h2
           style={{
@@ -687,15 +711,7 @@ const NinjaRun: NextPage = () => {
           NINJA RUN
         </h2>
       </div>
-      <div>
-        <button
-          className="text-sm px-3 py-1 mb-1"
-          disabled={playAgainDisabled}
-          onClick={() => reset()}
-        >
-          {gameState.current.players.length === 0 ? 'Start' : 'Play again'}
-        </button>
-      </div>
+      )}
       <div className="flex">
         {gameState.current.players.map((player, index) => (
           <GameScreen
@@ -705,6 +721,18 @@ const NinjaRun: NextPage = () => {
           />
         ))}
       </div>
+      {/* Should be a different component */}
+      {gameState.current.players.length === 0 && (
+        <div>
+          <button
+            className="text-sm px-3 py-1 mb-0"
+            disabled={playAgainDisabled}
+            onClick={() => reset()}
+          >
+            {gameState.current.players.length === 0 ? 'Start' : 'Play again'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
