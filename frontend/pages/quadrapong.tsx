@@ -14,7 +14,6 @@ type Ball = {
   y: number;
   dx: number;
   dy: number;
-  speed: number;
 };
 
 type Wall = {
@@ -22,6 +21,7 @@ type Wall = {
   y: number;
   width: number;
   height: number;
+  position: 'left' | 'right' | 'top' | 'bottom';
   color?: string;
 };
 
@@ -44,60 +44,70 @@ const PADDLE_OFFSET = WALL_OFFSET + WALL_THICKNESS + 8;
 const PADDLE_STOP = WALL_OFFSET + WALL_THICKNESS + 4;
 const BALL_SIZE = 8;
 const INITIAL_BALL_SPEED = 3;
+const SPEED_MULTIPLIER = 1.07;
 const PADDLE_SPEED = 15;
-const GRACE_DIST = 1;
 const STARTING_LIVES = 1;
 const SCORE_THICKNESS = 4;
 const SCORE_LENGTH = 12;
+// I'm not sure this works, but here just in case it helps at smaller speeds
+const COLLISION_EXTENSION = 1000;
 
-const DEFAULT_WALLS = [
+const DEFAULT_WALLS: Wall[] = [
   {
     x: WALL_OFFSET,
     y: WALL_OFFSET + WALL_THICKNESS,
     width: WALL_THICKNESS,
     height: WALL_LENGTH,
+    position: 'left',
   },
   {
     x: WALL_OFFSET + WALL_THICKNESS,
     y: WALL_OFFSET,
     width: WALL_LENGTH,
     height: WALL_THICKNESS,
+    position: 'top',
   },
   {
     x: CANVAS_SIZE - WALL_OFFSET - WALL_THICKNESS,
     y: WALL_OFFSET + WALL_THICKNESS,
     width: WALL_THICKNESS,
     height: WALL_LENGTH,
+    position: 'right',
   },
   {
     x: CANVAS_SIZE - WALL_OFFSET - WALL_LENGTH - WALL_THICKNESS,
     y: WALL_OFFSET,
     width: WALL_LENGTH,
     height: WALL_THICKNESS,
+    position: 'top',
   },
   {
     x: WALL_OFFSET,
     y: CANVAS_SIZE - WALL_OFFSET - WALL_LENGTH - WALL_THICKNESS,
     width: WALL_THICKNESS,
     height: WALL_LENGTH,
+    position: 'left',
   },
   {
     x: WALL_OFFSET + WALL_THICKNESS,
     y: CANVAS_SIZE - WALL_OFFSET - WALL_THICKNESS,
     width: WALL_LENGTH,
     height: WALL_THICKNESS,
+    position: 'bottom',
   },
   {
     x: CANVAS_SIZE - WALL_OFFSET - WALL_THICKNESS,
     y: CANVAS_SIZE - WALL_OFFSET - WALL_LENGTH - WALL_THICKNESS,
     width: WALL_THICKNESS,
     height: WALL_LENGTH,
+    position: 'right',
   },
   {
     x: CANVAS_SIZE - WALL_OFFSET - WALL_LENGTH - WALL_THICKNESS,
     y: CANVAS_SIZE - WALL_OFFSET - WALL_THICKNESS,
     width: WALL_LENGTH,
     height: WALL_THICKNESS,
+    position: 'bottom',
   },
 ];
 
@@ -142,7 +152,6 @@ const Quadrapong: NextPage = () => {
       y: CANVAS_SIZE / 2,
       dx: INITIAL_BALL_SPEED * Math.sin(initialAngle),
       dy: INITIAL_BALL_SPEED * Math.cos(initialAngle),
-      speed: INITIAL_BALL_SPEED,
     },
     keys: {
       a: false,
@@ -202,7 +211,7 @@ const Quadrapong: NextPage = () => {
           continue;
         }
 
-        const [pl, pr, pt, pb] = [
+        let [pl, pr, pt, pb] = [
           player.x,
           player.x +
             (position === 'left' || position === 'right'
@@ -215,8 +224,30 @@ const Quadrapong: NextPage = () => {
               : PADDLE_THICKNESS),
         ];
 
+        // Avoid tunneling effect from fast balls
+        if (position === 'left') {
+          pl -= COLLISION_EXTENSION;
+        } else if (position === 'right') {
+          pr += COLLISION_EXTENSION;
+        } else if (position === 'top') {
+          pt -= COLLISION_EXTENSION;
+        } else if (position === 'bottom') {
+          pb += COLLISION_EXTENSION;
+        }
+
         // Check if ball is colliding with player
         if (bb > pt && bt < pb && br > pl && bl < pr) {
+          // Reset ball to 'front' of paddle
+          if (position === 'left') {
+            ball.x = pr;
+          } else if (position === 'right') {
+            ball.x = pl - BALL_SIZE;
+          } else if (position === 'top') {
+            ball.y = pb;
+          } else if (position === 'bottom') {
+            ball.y = pt - BALL_SIZE;
+          }
+
           // Calculate the collision point
           const collisionPoint =
             position === 'left' || position === 'right'
@@ -230,19 +261,20 @@ const Quadrapong: NextPage = () => {
           const maxAngle = (Math.PI * 5) / 12; // 75 degrees
           const newAngle = normalizedCollisionPoint * maxAngle;
 
-          // Update ball speed
-          ball.speed *= 2;
+          const speed =
+            SPEED_MULTIPLIER * Math.sqrt(ball.dx ** 2 + ball.dy ** 2);
 
           // Update ball direction based on which paddle was hit
           if (position === 'left' || position === 'right') {
             ball.dx =
-              ball.speed * Math.cos(newAngle) * (position === 'left' ? 1 : -1);
-            ball.dy = ball.speed * -Math.sin(newAngle);
+              speed * Math.cos(newAngle) * (position === 'left' ? 1 : -1);
+            ball.dy = speed * -Math.sin(newAngle);
           } else {
-            ball.dx = ball.speed * Math.sin(newAngle);
+            ball.dx = speed * Math.sin(newAngle);
             ball.dy =
-              ball.speed * Math.cos(newAngle) * (position === 'top' ? 1 : -1);
+              speed * Math.cos(newAngle) * (position === 'top' ? 1 : -1);
           }
+
           return;
         }
       }
@@ -250,25 +282,47 @@ const Quadrapong: NextPage = () => {
       // Collision with walls
       // Unlike player collision, this is always a standard reflection
       for (const wall of walls) {
-        const [wl, wr, wt, wb] = [
+        let [wl, wr, wt, wb] = [
           wall.x,
           wall.x + wall.width,
           wall.y,
           wall.y + wall.height,
         ];
 
+        // Avoid tunneling effect from fast balls
+        if (wall.position === 'left') {
+          wl -= COLLISION_EXTENSION;
+        } else if (wall.position === 'right') {
+          wr += COLLISION_EXTENSION;
+        } else if (wall.position === 'top') {
+          wt -= COLLISION_EXTENSION;
+        } else if (wall.position === 'bottom') {
+          wb += COLLISION_EXTENSION;
+        }
+
+        // Check if ball is colliding with wall
         if (br > wl && bl < wr && bb > wt && bt < wb) {
-          ball.speed *= 2;
-          const mult = Math.sqrt(ball.speed);
+          // Reset ball to 'front' of wall
+          if (wall.position === 'left') {
+            ball.x = wr;
+          } else if (wall.position === 'right') {
+            ball.x = wl - BALL_SIZE;
+          } else if (wall.position === 'top') {
+            ball.y = wb;
+          } else if (wall.position === 'bottom') {
+            ball.y = wt - BALL_SIZE;
+          }
+
           if (wall.width > wall.height) {
             // Horizontal wall
-            ball.dy = -ball.dy * mult;
-            ball.dx = ball.dx * mult;
+            ball.dy = -ball.dy * SPEED_MULTIPLIER;
+            ball.dx = ball.dx * SPEED_MULTIPLIER;
           } else {
             // Vertical wall
-            ball.dx = -ball.dx * mult;
-            ball.dy = ball.dy * mult;
+            ball.dx = -ball.dx * SPEED_MULTIPLIER;
+            ball.dy = ball.dy * SPEED_MULTIPLIER;
           }
+
           return;
         }
       }
@@ -282,7 +336,7 @@ const Quadrapong: NextPage = () => {
       ) {
         // Reduce lives. Let it go negative, we use the 0 marker to add
         // additional walls to the game area
-        let newWall = null;
+        let newWall: Wall | null = null;
         if (bl < WALL_OFFSET) {
           players.left.lives -= 1;
           if (players.left.lives === 0) {
@@ -292,6 +346,7 @@ const Quadrapong: NextPage = () => {
               width: WALL_THICKNESS,
               height: CANVAS_SIZE - 2 * WALL_OFFSET - 2 * WALL_THICKNESS,
               color: players.left.color,
+              position: 'left',
             };
           }
         }
@@ -304,6 +359,7 @@ const Quadrapong: NextPage = () => {
               width: WALL_THICKNESS,
               height: CANVAS_SIZE - 2 * WALL_OFFSET - 2 * WALL_THICKNESS,
               color: players.right.color,
+              position: 'right',
             };
           }
         }
@@ -316,6 +372,7 @@ const Quadrapong: NextPage = () => {
               width: CANVAS_SIZE - 2 * WALL_OFFSET - 2 * WALL_THICKNESS,
               height: WALL_THICKNESS,
               color: players.top.color,
+              position: 'top',
             };
           }
         }
@@ -328,6 +385,7 @@ const Quadrapong: NextPage = () => {
               width: CANVAS_SIZE - 2 * WALL_OFFSET - 2 * WALL_THICKNESS,
               height: WALL_THICKNESS,
               color: players.bottom.color,
+              position: 'bottom',
             };
           }
         }
@@ -349,13 +407,12 @@ const Quadrapong: NextPage = () => {
         ball.y = CANVAS_SIZE / 2;
         ball.dx = 0;
         ball.dy = 0;
-        ball.speed = INITIAL_BALL_SPEED;
 
         // Pause before firing ball again
         setTimeout(() => {
           const randomAngle = Math.random() * Math.PI * 2;
-          ball.dx = ball.speed * Math.sin(randomAngle);
-          ball.dy = ball.speed * Math.cos(randomAngle);
+          ball.dx = INITIAL_BALL_SPEED * Math.sin(randomAngle);
+          ball.dy = INITIAL_BALL_SPEED * Math.cos(randomAngle);
         }, 0);
       }
     };
