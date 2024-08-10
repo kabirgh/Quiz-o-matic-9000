@@ -88,6 +88,6 @@ func (a *App) pollControllerInput(controller xinput.ControllerIndex, buzzerId st
 			runtime.EventsEmit(a.ctx, "press", buzzerId)
 		}
 
-		time.Sleep(60 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 }
