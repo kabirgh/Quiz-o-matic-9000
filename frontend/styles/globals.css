@@ -7,8 +7,17 @@
 @tailwind utilities;
 
 @font-face {
-  font-family: "Arvo";
-  src: local(""), url("/fonts/Arvo-Regular.ttf") format("truetype");
+  font-family: 'Arvo';
+  src:
+    local(''),
+    url('/fonts/Arvo-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Pong Score';
+  src:
+    local(''),
+    url('/fonts/pong-score-extended.ttf') format('truetype');
 }
 
 html,

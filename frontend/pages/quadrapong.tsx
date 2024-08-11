@@ -1,5 +1,5 @@
 import { NextPage } from 'next';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 type Player = {
   x: number;
@@ -26,6 +26,7 @@ type Wall = {
 };
 
 type State = {
+  winner: null | Player;
   phase: 'not_started' | 'in_progress' | 'game_over';
   walls: Wall[];
   players: { left: Player; right: Player; top: Player; bottom: Player };
@@ -114,8 +115,10 @@ const DEFAULT_WALLS: Wall[] = [
 const Quadrapong: NextPage = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [initialAngle] = useState(Math.random() * Math.PI * 2);
+  const [, setRenderTrigger] = useState({});
   const stateRef = useRef<State>({
-    phase: 'in_progress',
+    winner: null,
+    phase: 'not_started',
     walls: structuredClone(DEFAULT_WALLS),
     players: {
       top: {
@@ -176,6 +179,10 @@ const Quadrapong: NextPage = () => {
 
     const update = () => {
       const { ball, keys, players, walls } = stateRef.current;
+
+      if (stateRef.current.phase !== 'in_progress') {
+        return;
+      }
 
       // Move players
       switch (true) {
@@ -395,18 +402,34 @@ const Quadrapong: NextPage = () => {
           // collisions get weird with multiple walls
           stateRef.current.walls = walls.filter(
             (wall) =>
-              wall.x + wall.width <= newWall.x ||
-              wall.x >= newWall.x + newWall.width ||
-              wall.y + wall.height <= newWall.y ||
-              wall.y >= newWall.y + newWall.height,
+              // For some reason need the ! to make wails happy
+              wall.x + wall.width <= newWall!.x ||
+              wall.x >= newWall!.x + newWall!.width ||
+              wall.y + wall.height <= newWall!.y ||
+              wall.y >= newWall!.y + newWall!.height,
           );
-          stateRef.current.walls.unshift(newWall);
+          stateRef.current.walls.push(newWall);
         }
 
         ball.x = CANVAS_SIZE / 2;
         ball.y = CANVAS_SIZE / 2;
         ball.dx = 0;
         ball.dy = 0;
+
+        // If there is only one player left, game over
+        let playersLeft = 0;
+        for (const player of Object.values(players)) {
+          if (player.lives > 0) {
+            playersLeft += 1;
+            // Set winner now, will be unset if there is more than one player left
+            stateRef.current.winner = player;
+          }
+        }
+        if (playersLeft === 1) {
+          stateRef.current.phase = 'game_over';
+        } else {
+          stateRef.current.winner = null;
+        }
 
         // Pause before firing ball again
         setTimeout(() => {
@@ -502,13 +525,29 @@ const Quadrapong: NextPage = () => {
       }
 
       // Draw (square) ball
-      ctx.fillStyle = 'white';
-      ctx.fillRect(ball.x, ball.y, BALL_SIZE, BALL_SIZE);
+      if (stateRef.current.phase !== 'game_over') {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(ball.x, ball.y, BALL_SIZE, BALL_SIZE);
+      }
+
+      if (stateRef.current.phase === 'game_over') {
+        ctx.fillStyle = 'white';
+        ctx.font = '36px Pong Score';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(
+          `${stateRef.current.winner!.name}   wins!`.toUpperCase(),
+          CANVAS_SIZE / 2,
+          CANVAS_SIZE / 2,
+        );
+        return;
+      }
     };
 
     const loop = () => {
       update();
       render();
+      setRenderTrigger({});
       animationFrameId = window.requestAnimationFrame(loop);
     };
     animationFrameId = window.requestAnimationFrame(loop);
@@ -535,6 +574,38 @@ const Quadrapong: NextPage = () => {
     };
   }, []);
 
+  const start = useCallback(() => {
+    stateRef.current = {
+      ...stateRef.current,
+      phase: 'in_progress',
+      walls: structuredClone(DEFAULT_WALLS),
+    };
+    stateRef.current.players.left = {
+      ...stateRef.current.players.left,
+      lives: STARTING_LIVES,
+      x: 0 + PADDLE_OFFSET,
+      y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
+    };
+    stateRef.current.players.right = {
+      ...stateRef.current.players.right,
+      lives: STARTING_LIVES,
+      x: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
+      y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
+    };
+    stateRef.current.players.top = {
+      ...stateRef.current.players.top,
+      lives: STARTING_LIVES,
+      x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
+      y: 0 + PADDLE_OFFSET,
+    };
+    stateRef.current.players.bottom = {
+      ...stateRef.current.players.bottom,
+      lives: STARTING_LIVES,
+      x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
+      y: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
+    };
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-800">
       <canvas
@@ -543,6 +614,19 @@ const Quadrapong: NextPage = () => {
         height={CANVAS_SIZE}
         // className="border border-solid border-white"
       />
+      <div>
+        <button
+          className="text-sm px-3 py-1 mb-0 mt-2"
+          style={{
+            visibility:
+              stateRef.current.phase === 'in_progress' ? 'hidden' : 'visible',
+          }}
+          disabled={false}
+          onClick={() => start()}
+        >
+          {stateRef.current.phase === 'not_started' ? 'Start' : 'Play again'}
+        </button>
+      </div>
     </div>
   );
 };

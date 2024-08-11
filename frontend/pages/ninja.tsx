@@ -386,7 +386,6 @@ const ANIMATIONS = {
 const NinjaRun: NextPage = () => {
   const router = useRouter();
   const [, setRenderTrigger] = useState({});
-  const [firstGame, setFirstGame] = useState(true);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
 
   const gameState = useRef<GameState>({
@@ -466,7 +465,6 @@ const NinjaRun: NextPage = () => {
       phase: 'in_progress',
       gameStartTime: Date.now(),
     };
-    setFirstGame(false);
   }, []);
 
   useEffect(() => {
@@ -833,7 +831,7 @@ const NinjaRun: NextPage = () => {
           disabled={loadingPlayers}
           onClick={() => start()}
         >
-          {firstGame ? 'Start' : 'Play again'}
+          {gameState.current.phase === 'not_started' ? 'Start' : 'Play again'}
         </button>
       </div>
     </div>
