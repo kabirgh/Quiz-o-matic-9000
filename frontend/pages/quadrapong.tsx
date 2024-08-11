@@ -45,7 +45,7 @@ const PADDLE_OFFSET = WALL_OFFSET + WALL_THICKNESS + 8;
 const PADDLE_STOP = WALL_OFFSET + WALL_THICKNESS + 4;
 const BALL_SIZE = 8;
 const INITIAL_BALL_SPEED = 3;
-const SPEED_MULTIPLIER = 1.07;
+const SPEED_MULTIPLIER = 1.1;
 const PADDLE_SPEED = 15;
 const STARTING_LIVES = 1;
 const SCORE_THICKNESS = 4;
@@ -568,10 +568,10 @@ const Quadrapong: NextPage = () => {
       }
 
       if (stateRef.current.phase === 'game_over') {
-        ctx.fillStyle = 'white';
         ctx.font = '36px Pong Score';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
+        ctx.fillStyle = stateRef.current.winner!.color;
         ctx.fillText(
           `${stateRef.current.winner!.name}   wins!`.toUpperCase(),
           CANVAS_SIZE / 2,
@@ -609,7 +609,7 @@ const Quadrapong: NextPage = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [playSound]);
 
   const start = useCallback(() => {
     stateRef.current = {
@@ -644,7 +644,7 @@ const Quadrapong: NextPage = () => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-800">
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-950">
       <canvas
         ref={canvasRef}
         width={CANVAS_SIZE}
