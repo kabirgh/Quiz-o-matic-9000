@@ -114,6 +114,10 @@ const DEFAULT_WALLS: Wall[] = [
 
 const Quadrapong: NextPage = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const paddleAudioRef = useRef<HTMLAudioElement | null>(null);
+  const wallAudioRef = useRef<HTMLAudioElement | null>(null);
+  const scoreAudioRef = useRef<HTMLAudioElement | null>(null);
+
   const [initialAngle] = useState(Math.random() * Math.PI * 2);
   const [, setRenderTrigger] = useState({});
   const stateRef = useRef<State>({
@@ -167,6 +171,31 @@ const Quadrapong: NextPage = () => {
       k: false,
     },
   });
+
+  const playSound = useCallback((sound: 'paddle' | 'wall' | 'score') => {
+    // Pause all other sounds before playing a new one
+    paddleAudioRef.current?.pause();
+    wallAudioRef.current?.pause();
+    scoreAudioRef.current?.pause();
+
+    switch (sound) {
+      case 'paddle':
+        if (paddleAudioRef.current === null) return;
+        paddleAudioRef.current.currentTime = 0;
+        paddleAudioRef.current.play();
+        break;
+      case 'wall':
+        if (wallAudioRef.current === null) return;
+        wallAudioRef.current.currentTime = 0;
+        wallAudioRef.current.play();
+        break;
+      case 'score':
+        if (scoreAudioRef.current === null) return;
+        scoreAudioRef.current.currentTime = 0;
+        scoreAudioRef.current.play();
+        break;
+    }
+  }, []);
 
   useEffect(() => {
     if (canvasRef.current === null) {
@@ -282,6 +311,8 @@ const Quadrapong: NextPage = () => {
               speed * Math.cos(newAngle) * (position === 'top' ? 1 : -1);
           }
 
+          playSound('paddle');
+
           return;
         }
       }
@@ -330,6 +361,8 @@ const Quadrapong: NextPage = () => {
             ball.dy = ball.dy * SPEED_MULTIPLIER;
           }
 
+          playSound('wall');
+
           return;
         }
       }
@@ -346,6 +379,7 @@ const Quadrapong: NextPage = () => {
         let newWall: Wall | null = null;
         if (bl < WALL_OFFSET) {
           players.left.lives -= 1;
+          playSound('score');
           if (players.left.lives === 0) {
             newWall = {
               x: WALL_OFFSET,
@@ -359,6 +393,7 @@ const Quadrapong: NextPage = () => {
         }
         if (br > CANVAS_SIZE - WALL_OFFSET) {
           players.right.lives -= 1;
+          playSound('score');
           if (players.right.lives === 0) {
             newWall = {
               x: CANVAS_SIZE - WALL_OFFSET - WALL_THICKNESS,
@@ -372,6 +407,7 @@ const Quadrapong: NextPage = () => {
         }
         if (bt < WALL_OFFSET) {
           players.top.lives -= 1;
+          playSound('score');
           if (players.top.lives === 0) {
             newWall = {
               x: WALL_OFFSET + WALL_THICKNESS,
@@ -385,6 +421,7 @@ const Quadrapong: NextPage = () => {
         }
         if (bb > CANVAS_SIZE - WALL_OFFSET) {
           players.bottom.lives -= 1;
+          playSound('score');
           if (players.bottom.lives === 0) {
             newWall = {
               x: WALL_OFFSET + WALL_THICKNESS,
@@ -627,6 +664,24 @@ const Quadrapong: NextPage = () => {
           {stateRef.current.phase === 'not_started' ? 'Start' : 'Play again'}
         </button>
       </div>
+      <audio
+        ref={paddleAudioRef}
+        src="/audio/pong/paddle.wav"
+        style={{ display: 'none' }}
+        preload="auto"
+      ></audio>
+      <audio
+        ref={wallAudioRef}
+        src="/audio/pong/wall.wav"
+        style={{ display: 'none' }}
+        preload="auto"
+      ></audio>
+      <audio
+        ref={scoreAudioRef}
+        src="/audio/pong/score.wav"
+        style={{ display: 'none' }}
+        preload="auto"
+      ></audio>
     </div>
   );
 };
