@@ -9,6 +9,23 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+var controllerState *xinput.ControllerState
+
+func (a *App) ReadControllerState() *string {
+	if controllerState == nil {
+		return nil
+	}
+
+	jsonData, err := json.Marshal(controllerState)
+	if err != nil {
+		runtime.LogError(a.ctx, err.Error())
+		return nil
+	}
+
+	str := string(jsonData)
+	return &str
+}
+
 // Should be called in a goroutine
 func (a *App) pollForControllers() {
 	if xinput.LoadError != nil {
@@ -61,7 +78,6 @@ func (a *App) pollControllerInput(controller xinput.ControllerIndex, buzzerId st
 		}
 	}()
 
-	var oldState *xinput.ControllerState
 	for {
 		newState, err := xinput.GetControllerState(controller)
 		if err != nil {
@@ -69,10 +85,11 @@ func (a *App) pollControllerInput(controller xinput.ControllerIndex, buzzerId st
 		}
 
 		// Nothing changed, skip
-		if oldState != nil && *newState == *oldState {
+		if controllerState != nil && *newState == *controllerState {
 			continue
 		}
-		oldState = newState
+		// Don't use mutex since we only update state in this goroutine
+		controllerState = newState
 
 		jsonData, err := json.Marshal(newState)
 
