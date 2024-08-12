@@ -43,12 +43,12 @@ type GameState = {
   players: Player[];
   obstaclePool: ObstaclePool;
   speed: number;
-  speedLastUpdated: number;
   obstacleBag: number[];
   lastTick: number;
   // not_started is only at before the first game starts
   phase: 'not_started' | 'in_progress' | 'game_over';
   gameStartTime: number;
+  speedUpdateAccumulator: number;
 };
 
 class ObstaclePool {
@@ -133,6 +133,7 @@ const PlayerSprite = ({
 
   return (
     <>
+      {/* Main sprite */}
       <div
         style={{
           position: 'absolute',
@@ -146,6 +147,7 @@ const PlayerSprite = ({
           rotate: rotate,
           backgroundPosition: `-${currentFrame * PLAYER_SIZE}px 0px`,
           backgroundSize: 'auto 100%',
+          filter: 'brightness(1.1)', // Slightly increase brightness
         }}
       ></div>
     </>
@@ -372,13 +374,13 @@ const NinjaRun: NextPage = () => {
     // Same obstacles used for all players. player.obstacles is usually a reference to the list in the pool
     obstaclePool: new ObstaclePool(0),
     speed: 0.15,
-    speedLastUpdated: Date.now(),
     // Ensure we don't choose the same side for new obstacles too many times in a row
     obstacleBag: [...OBSTACLE_BAG_DEFAULT],
     lastTick: 0,
     phase: 'not_started',
     // Set when start game button is pressed
     gameStartTime: 0,
+    speedUpdateAccumulator: 0,
   });
 
   // Fullscreen window
@@ -438,11 +440,11 @@ const NinjaRun: NextPage = () => {
       })),
       obstaclePool: new ObstaclePool(20),
       speed: 0.15,
-      speedLastUpdated: Date.now(),
       obstacleBag: [...OBSTACLE_BAG_DEFAULT],
       lastTick: 0,
       phase: 'in_progress',
       gameStartTime: Date.now(),
+      speedUpdateAccumulator: 0,
     };
   }, []);
 
@@ -454,13 +456,15 @@ const NinjaRun: NextPage = () => {
     }
   }, []);
 
-  const updateGameSpeed = useCallback((_deltaTime: number) => {
+  const updateGameSpeed = useCallback((deltaTime: number) => {
     const state = gameState.current;
     // Gradually increase the speed of the obstacles
-    const now = Date.now();
-    if (now - state.speedLastUpdated > 500) {
-      state.speed *= 1.015;
-      state.speedLastUpdated = now;
+    state.speedUpdateAccumulator += deltaTime;
+    if (state.speedUpdateAccumulator >= 500) {
+      const intervals = Math.floor(state.speedUpdateAccumulator / 500);
+      // Update the speed based on the number of intervals passed
+      state.speed *= Math.pow(1.015, intervals);
+      state.speedUpdateAccumulator -= intervals * 500;
     }
   }, []);
 
