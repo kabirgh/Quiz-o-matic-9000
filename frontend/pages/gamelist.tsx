@@ -22,7 +22,7 @@ const games = [
     name: 'Ninja Run',
     font: 'Courier New',
     imageUrl: '/images/ninjarun.png',
-    url: '/ninjarun',
+    url: '/ninja',
   },
   {
     name: 'Snake',
