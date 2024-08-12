@@ -1,7 +1,6 @@
 import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import Fp, { FpsView } from 'react-fps';
 
 import { useWebAudio } from './hooks';
 
