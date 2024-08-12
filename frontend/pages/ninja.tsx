@@ -132,25 +132,50 @@ const PlayerSprite = ({
   }
 
   return (
-    <>
+    <div
+      style={{
+        position: 'absolute',
+        left: x,
+        top: y,
+        width: PLAYER_SIZE,
+        height: PLAYER_SIZE,
+        transform: transform,
+        rotate: rotate,
+      }}
+    >
+      {/* Outline */}
+      {/* {[-0.5, 0.5].map((offset) => (
+        <div
+          key={offset}
+          style={{
+            position: 'absolute',
+            left: offset,
+            top: offset,
+            width: PLAYER_SIZE,
+            height: PLAYER_SIZE,
+            backgroundImage: `url('${url}')`,
+            backgroundPosition: `-${currentFrame * PLAYER_SIZE}px 0px`,
+            backgroundSize: 'auto 100%',
+            filter: 'brightness(0) invert(1)', // White outline
+          }}
+        />
+      ))} */}
       {/* Main sprite */}
       <div
         style={{
           position: 'absolute',
-          left: x,
-          top: y,
+          left: 0,
+          top: 0,
           width: PLAYER_SIZE,
           height: PLAYER_SIZE,
-          imageRendering: 'pixelated',
           backgroundImage: `url('${url}')`,
-          transform: transform,
-          rotate: rotate,
           backgroundPosition: `-${currentFrame * PLAYER_SIZE}px 0px`,
           backgroundSize: 'auto 100%',
-          filter: 'brightness(1.1)', // Slightly increase brightness
+          imageRendering: 'pixelated',
+          filter: 'brightness(1.25) saturate(1.2)', // Increase brightness and saturation
         }}
-      ></div>
-    </>
+      />
+    </div>
   );
 };
 
@@ -158,12 +183,38 @@ const ObstacleSprite = ({ x, y, currentFrame }: Obstacle) => {
   const { hitbox, url } = ANIMATIONS.bat;
 
   return (
-    <>
+    <div
+      style={{
+        position: 'absolute',
+        left: x,
+        top: y,
+        width: OBSTACLE_SIZE,
+        height: OBSTACLE_SIZE,
+      }}
+    >
+      {/* Outline */}
+      {[-0.5, 0.5].map((offset) => (
+        <div
+          key={offset}
+          style={{
+            position: 'absolute',
+            left: offset,
+            top: offset,
+            width: OBSTACLE_SIZE,
+            height: OBSTACLE_SIZE,
+            backgroundImage: `url('${url}')`,
+            backgroundPosition: `-${currentFrame * OBSTACLE_SIZE}px 0px`,
+            backgroundSize: 'auto 100%',
+            filter: 'blur(1px) brightness(0) invert(1)', // White outline
+          }}
+        />
+      ))}
+      {/* Main sprite */}
       <div
         style={{
           position: 'absolute',
-          left: x,
-          top: y,
+          left: 0,
+          top: 0,
           width: OBSTACLE_SIZE,
           height: OBSTACLE_SIZE,
           imageRendering: 'pixelated',
@@ -172,7 +223,7 @@ const ObstacleSprite = ({ x, y, currentFrame }: Obstacle) => {
           backgroundSize: 'auto 100%',
         }}
       ></div>
-    </>
+    </div>
   );
 };
 
@@ -182,46 +233,59 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
       style={{
         width: GAME_WIDTH,
         height: GAME_HEIGHT,
-        background: "url('images/ninja/bg2.jpeg') no-repeat center center",
-        backgroundSize: 'contain',
-        // border: '1px solid #323232',
-        borderBottom: 'none', // Remove bottom border to connect with color bar
-        position: 'relative',
+        background: `
+          linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.7)),
+          url('images/ninja/bg4.jpeg') no-repeat center center
+        `,
+        backgroundSize: '100% 100%',
+        boxShadow: '0 10px 50px -12px rgb(255 255 255 / 0.3)',
         overflow: 'hidden',
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        // border: '1px solid black',
+        borderBottom: 'none', // Connect with color bar
       }}
     >
+      {/* Score display */}
       <div
         style={{
-          position: 'absolute',
-          top: 8,
-          right: 8,
+          alignSelf: 'flex-end',
+          margin: '8px',
           fontFamily: 'Courier New',
           fontSize: 16,
-          zIndex: 2,
-          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+          fontWeight: 'bold',
+          color: 'white',
         }}
       >
         {player.score}
       </div>
-      {player.isGameOver && (
-        <div
-          style={{
-            fontFamily: 'Courier New',
-            fontSize: 24,
-            fontWeight: 'bold',
-          }}
-        >
-          GAME OVER
-        </div>
-      )}
-      <PlayerSprite {...player} />
-      {obstacles.map((obstacle, index) => (
-        <ObstacleSprite key={index} {...obstacle} />
-      ))}
+
+      {/* Game content */}
+      <div style={{ flex: 1, position: 'relative' }}>
+        {player.isGameOver && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              fontFamily: 'Courier New',
+              fontSize: 24,
+              fontWeight: 'bold',
+              color: 'white',
+            }}
+          >
+            GAME OVER
+          </div>
+        )}
+        <PlayerSprite {...player} />
+        {obstacles.map((obstacle, index) => (
+          <ObstacleSprite key={index} {...obstacle} />
+        ))}
+      </div>
     </div>
+
     {/* Color bar */}
     <div
       style={{
@@ -239,7 +303,6 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
     </div>
   </div>
 );
-
 //
 // Constants
 //
@@ -253,7 +316,7 @@ const OBSTACLE_BAG_DEFAULT = shuffle([0, 0, 1, 1]);
 const DEFAULT_OBSTACLES: Obstacle[] = [
   {
     x: 0,
-    y: -OBSTACLE_SIZE,
+    y: -2 * OBSTACLE_SIZE,
     currentFrame: 0,
     lastFrameUpdate: 0,
   },
@@ -270,7 +333,7 @@ const DEFAULT_PLAYERS: Player[] = [
     color: 'blue',
     buzzerId: '1',
     x: 0,
-    y: GAME_HEIGHT * 0.7,
+    y: GAME_HEIGHT * 0.6,
     vx: 0,
     score: 0,
     obstacles: DEFAULT_OBSTACLES,
@@ -285,7 +348,7 @@ const DEFAULT_PLAYERS: Player[] = [
     color: 'green',
     buzzerId: '2',
     x: 0,
-    y: GAME_HEIGHT * 0.7,
+    y: GAME_HEIGHT * 0.6,
     vx: 0,
     score: 0,
     obstacles: DEFAULT_OBSTACLES,
@@ -300,7 +363,7 @@ const DEFAULT_PLAYERS: Player[] = [
     color: 'red',
     buzzerId: '3',
     x: 0,
-    y: GAME_HEIGHT * 0.7,
+    y: GAME_HEIGHT * 0.6,
     vx: 0,
     score: 0,
     obstacles: DEFAULT_OBSTACLES,
@@ -315,7 +378,7 @@ const DEFAULT_PLAYERS: Player[] = [
     color: 'yellow',
     buzzerId: '4',
     x: 0,
-    y: GAME_HEIGHT * 0.7,
+    y: GAME_HEIGHT * 0.6,
     vx: 0,
     score: 0,
     obstacles: DEFAULT_OBSTACLES,
@@ -407,7 +470,7 @@ const NinjaRun: NextPage = () => {
           name: team.name,
           color: team.color,
           buzzerId: team.buzzerId || '',
-          y: GAME_HEIGHT * 0.7,
+          y: GAME_HEIGHT * 0.6,
           x: 0,
           vx: 0,
           score: 0,
@@ -427,7 +490,7 @@ const NinjaRun: NextPage = () => {
     gameState.current = {
       players: gameState.current.players.map((player) => ({
         ...player,
-        y: GAME_HEIGHT * 0.7,
+        y: GAME_HEIGHT * 0.6,
         x: 0,
         vx: 0,
         score: 0,
@@ -458,6 +521,11 @@ const NinjaRun: NextPage = () => {
 
   const updateGameSpeed = useCallback((deltaTime: number) => {
     const state = gameState.current;
+
+    if (state.phase !== 'in_progress') {
+      return;
+    }
+
     // Gradually increase the speed of the obstacles
     state.speedUpdateAccumulator += deltaTime;
     if (state.speedUpdateAccumulator >= 500) {
@@ -491,7 +559,7 @@ const NinjaRun: NextPage = () => {
     }
 
     // Don't spawn or update obstacles for the first few seconds
-    if (now - state.gameStartTime < 2000) {
+    if (now - state.gameStartTime < 1500) {
       return;
     }
 
@@ -794,7 +862,10 @@ const NinjaRun: NextPage = () => {
   }, [gameLoop]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
+    <div
+      className="flex flex-col items-center justify-center min-h-screen
+        bg-[url('/images/ninja/darkclouds.png')] bg-no-repeat bg-cover bg-center"
+    >
       <div className="flex">
         {gameState.current.players.map((player, index) => (
           <GameScreen
