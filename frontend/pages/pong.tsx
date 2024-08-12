@@ -643,7 +643,7 @@ const Quadrapong: NextPage = () => {
     const keydownHandler = (event: any) => {
       switch (event.code) {
         case 'Backspace':
-          router.push('/');
+          router.push('/gamelist');
           break;
       }
     };

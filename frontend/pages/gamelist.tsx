@@ -15,7 +15,7 @@ const games = [
   {
     name: 'PONG',
     font: 'Pong Score',
-    imageUrl: '/images/pong.png',
+    imageUrl: '/images/pong2.png',
     url: '/pong',
   },
   {
@@ -47,15 +47,15 @@ const GameCard = ({ name, font, imageUrl, url, router }: GameCardProps) => (
     onClick={() => router.push(url)}
   >
     <div className="pl-4">
-      <h3 className="text-2xl" style={{ fontFamily: font }}>
+      <h3 className="text-3xl" style={{ fontFamily: font }}>
         {name}
       </h3>
     </div>
-    <div className="ml-auto">
+    <div className="ml-auto pr-0">
       <img
         src={imageUrl}
         alt={name}
-        className="w-full h-24 object-cover rounded"
+        className="w-full h-20 object-cover rounded"
       />
     </div>
   </div>
@@ -77,7 +77,10 @@ const GameList: NextPage = () => {
   }, [router]);
 
   return (
-    <div className="w-screen h-screen flex flex-col items-center justify-center bg-[url('/images/pastelsky.png')] bg-no-repeat bg-cover bg-center">
+    <div
+      className="w-screen h-screen flex flex-col items-center justify-center
+    bg-[url('/images/pastelsky.png')] bg-no-repeat bg-cover bg-center"
+    >
       <div className="flex flex-col items-center gap-4">
         {games.map((game, index) => (
           <GameCard key={index} router={router} {...game} />
