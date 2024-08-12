@@ -2,6 +2,8 @@ import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useWebAudio } from './hooks';
+
 type Player = {
   x: number;
   y: number;
@@ -115,6 +117,7 @@ const DEFAULT_WALLS: Wall[] = [
 
 const Quadrapong: NextPage = () => {
   const router = useRouter();
+  const playSound = useWebAudio();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const paddleAudioRef = useRef<HTMLAudioElement | null>(null);
   const wallAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -183,31 +186,6 @@ const Quadrapong: NextPage = () => {
     const ctx = canvas.getContext('2d')!;
     let animationFrameId: number;
 
-    const playSound = (sound: 'paddle' | 'wall' | 'score') => {
-      // Pause all other sounds before playing a new one
-      paddleAudioRef.current?.pause();
-      wallAudioRef.current?.pause();
-      scoreAudioRef.current?.pause();
-
-      switch (sound) {
-        case 'paddle':
-          if (paddleAudioRef.current === null) return;
-          paddleAudioRef.current.play();
-          paddleAudioRef.current.currentTime = 0;
-          break;
-        case 'wall':
-          if (wallAudioRef.current === null) return;
-          wallAudioRef.current.play();
-          wallAudioRef.current.currentTime = 0;
-          break;
-        case 'score':
-          if (scoreAudioRef.current === null) return;
-          scoreAudioRef.current.play();
-          scoreAudioRef.current.currentTime = 0;
-          break;
-      }
-    };
-
     const update = () => {
       const { ball, keys, players, walls } = stateRef.current;
 
@@ -275,8 +253,6 @@ const Quadrapong: NextPage = () => {
 
         // Check if ball is colliding with player
         if (bb > pt && bt < pb && br > pl && bl < pr) {
-          playSound('paddle');
-
           // Reset ball to 'front' of paddle
           if (position === 'left') {
             ball.x = pr;
@@ -314,6 +290,8 @@ const Quadrapong: NextPage = () => {
             ball.dy =
               speed * Math.cos(newAngle) * (position === 'top' ? 1 : -1);
           }
+
+          playSound('paddle');
 
           return;
         }
@@ -611,7 +589,7 @@ const Quadrapong: NextPage = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [playSound]);
 
   const start = useCallback(() => {
     stateRef.current = {
