@@ -1,6 +1,7 @@
 import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import Fp, { FpsView } from 'react-fps';
 
 import { useWebAudio } from './hooks';
 
@@ -29,6 +30,7 @@ type Wall = {
 };
 
 type State = {
+  lastTick: number;
   winner: null | Player;
   phase: 'not_started' | 'in_progress' | 'game_over';
   walls: Wall[];
@@ -47,9 +49,9 @@ const PADDLE_OFFSET = WALL_OFFSET + WALL_THICKNESS + 8;
 // Let the player stop 4 pixels from the wall
 const PADDLE_STOP = WALL_OFFSET + WALL_THICKNESS + 4;
 const BALL_SIZE = 8;
-const INITIAL_BALL_SPEED = 3;
+const INITIAL_BALL_SPEED = 0.18;
 const SPEED_MULTIPLIER = 1.1;
-const PADDLE_SPEED = 15;
+const PADDLE_SPEED = 0.8;
 const STARTING_LIVES = 4;
 const SCORE_THICKNESS = 4;
 const SCORE_LENGTH = 12;
@@ -126,6 +128,7 @@ const Quadrapong: NextPage = () => {
   const [initialAngle] = useState(Math.random() * Math.PI * 2);
   const [, setRenderTrigger] = useState({});
   const stateRef = useRef<State>({
+    lastTick: 0,
     winner: null,
     phase: 'not_started',
     walls: structuredClone(DEFAULT_WALLS),
@@ -186,7 +189,7 @@ const Quadrapong: NextPage = () => {
     const ctx = canvas.getContext('2d')!;
     let animationFrameId: number;
 
-    const update = () => {
+    const update = (deltaTime: number) => {
       const { ball, keys, players, walls } = stateRef.current;
 
       if (stateRef.current.phase !== 'in_progress') {
@@ -198,20 +201,20 @@ const Quadrapong: NextPage = () => {
         case keys.a:
           players.bottom.x = Math.max(
             PADDLE_STOP,
-            players.bottom.x - PADDLE_SPEED,
+            players.bottom.x - PADDLE_SPEED * deltaTime,
           );
           break;
         case keys.d:
           players.bottom.x = Math.min(
             CANVAS_SIZE - PADDLE_LENGTH - PADDLE_STOP,
-            players.bottom.x + PADDLE_SPEED,
+            players.bottom.x + PADDLE_SPEED * deltaTime,
           );
           break;
       }
 
       // Update ball position
-      ball.x += ball.dx;
-      ball.y += ball.dy;
+      ball.x += ball.dx * deltaTime;
+      ball.y += ball.dy * deltaTime;
 
       const [bl, br, bt, bb] = [
         ball.x,
@@ -275,7 +278,10 @@ const Quadrapong: NextPage = () => {
 
           // Calculate new angle (up to 75 degrees)
           const maxAngle = (Math.PI * 5) / 12; // 75 degrees
-          const newAngle = normalizedCollisionPoint * maxAngle;
+          const newAngle =
+            normalizedCollisionPoint *
+            maxAngle *
+            (position === 'left' || position === 'right' ? -1 : 1);
 
           const speed =
             SPEED_MULTIPLIER * Math.sqrt(ball.dx ** 2 + ball.dy ** 2);
@@ -561,12 +567,23 @@ const Quadrapong: NextPage = () => {
       }
     };
 
-    const loop = () => {
-      update();
+    const loop = (time: DOMHighResTimeStamp) => {
+      // Initialize lastTick if it's the first frame
+      if (stateRef.current.lastTick === 0) {
+        stateRef.current.lastTick = time;
+        animationFrameId = window.requestAnimationFrame(loop);
+        return;
+      }
+
+      const deltaTime = time - stateRef.current.lastTick;
+      stateRef.current.lastTick = time;
+
+      update(deltaTime);
       render();
       setRenderTrigger({});
       animationFrameId = window.requestAnimationFrame(loop);
     };
+
     animationFrameId = window.requestAnimationFrame(loop);
 
     const handleKeyDown = (e: KeyboardEvent) => {
