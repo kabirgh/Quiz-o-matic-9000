@@ -811,7 +811,7 @@ const NinjaRun: NextPage = () => {
   }, [gameLoop]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#323232]">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
       <div className="flex">
         {gameState.current.players.map((player, index) => (
           <GameScreen
