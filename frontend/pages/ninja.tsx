@@ -146,19 +146,8 @@ const PlayerSprite = ({
           rotate: rotate,
           backgroundPosition: `-${currentFrame * PLAYER_SIZE}px 0px`,
           backgroundSize: 'auto 100%',
-          // border: `1px solid black`,
         }}
       ></div>
-      {/* <div
-        style={{
-          position: 'absolute',
-          left: wall === 'left' ? x + hitbox.yb : x + hitbox.yt,
-          top: y + hitbox.xf,
-          width: PLAYER_SIZE - hitbox.yt - hitbox.yb,
-          height: PLAYER_SIZE - hitbox.xf - hitbox.xb,
-          border: '1px solid blue',
-        }}
-      ></div> */}
     </>
   );
 };
@@ -179,19 +168,8 @@ const ObstacleSprite = ({ x, y, currentFrame }: Obstacle) => {
           backgroundImage: `url('${url}')`,
           backgroundPosition: `-${currentFrame * OBSTACLE_SIZE}px 0px`,
           backgroundSize: 'auto 100%',
-          // border: `1px solid black`,
         }}
       ></div>
-      {/* <div
-        style={{
-          position: 'absolute',
-          left: x + hitbox.xb,
-          top: y + hitbox.yt,
-          width: OBSTACLE_SIZE - hitbox.xb - hitbox.xf,
-          height: OBSTACLE_SIZE - hitbox.yt - hitbox.yb,
-          border: '1px solid blue',
-        }}
-      ></div> */}
     </>
   );
 };
@@ -202,7 +180,8 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
       style={{
         width: GAME_WIDTH,
         height: GAME_HEIGHT,
-        backgroundColor: 'white',
+        background: "url('images/ninja/bg2.jpeg') no-repeat center center",
+        backgroundSize: 'contain',
         // border: '1px solid #323232',
         borderBottom: 'none', // Remove bottom border to connect with color bar
         position: 'relative',
@@ -750,7 +729,7 @@ const NinjaRun: NextPage = () => {
     const keydownHandler = (event: any) => {
       switch (event.code) {
         case 'Backspace':
-          router.push('/');
+          router.push('/gamelist');
           break;
         case 'KeyA':
           handleJump('1');
