@@ -1,4 +1,5 @@
 import { NextPage } from 'next';
+import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 type Player = {
@@ -47,7 +48,7 @@ const BALL_SIZE = 8;
 const INITIAL_BALL_SPEED = 3;
 const SPEED_MULTIPLIER = 1.1;
 const PADDLE_SPEED = 15;
-const STARTING_LIVES = 1;
+const STARTING_LIVES = 4;
 const SCORE_THICKNESS = 4;
 const SCORE_LENGTH = 12;
 // I'm not sure this works, but here just in case it helps at smaller speeds
@@ -113,6 +114,7 @@ const DEFAULT_WALLS: Wall[] = [
 ];
 
 const Quadrapong: NextPage = () => {
+  const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const paddleAudioRef = useRef<HTMLAudioElement | null>(null);
   const wallAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -172,31 +174,6 @@ const Quadrapong: NextPage = () => {
     },
   });
 
-  const playSound = useCallback((sound: 'paddle' | 'wall' | 'score') => {
-    // Pause all other sounds before playing a new one
-    paddleAudioRef.current?.pause();
-    wallAudioRef.current?.pause();
-    scoreAudioRef.current?.pause();
-
-    switch (sound) {
-      case 'paddle':
-        if (paddleAudioRef.current === null) return;
-        paddleAudioRef.current.currentTime = 0;
-        paddleAudioRef.current.play();
-        break;
-      case 'wall':
-        if (wallAudioRef.current === null) return;
-        wallAudioRef.current.currentTime = 0;
-        wallAudioRef.current.play();
-        break;
-      case 'score':
-        if (scoreAudioRef.current === null) return;
-        scoreAudioRef.current.currentTime = 0;
-        scoreAudioRef.current.play();
-        break;
-    }
-  }, []);
-
   useEffect(() => {
     if (canvasRef.current === null) {
       return;
@@ -205,6 +182,31 @@ const Quadrapong: NextPage = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d')!;
     let animationFrameId: number;
+
+    const playSound = (sound: 'paddle' | 'wall' | 'score') => {
+      // Pause all other sounds before playing a new one
+      paddleAudioRef.current?.pause();
+      wallAudioRef.current?.pause();
+      scoreAudioRef.current?.pause();
+
+      switch (sound) {
+        case 'paddle':
+          if (paddleAudioRef.current === null) return;
+          paddleAudioRef.current.play();
+          paddleAudioRef.current.currentTime = 0;
+          break;
+        case 'wall':
+          if (wallAudioRef.current === null) return;
+          wallAudioRef.current.play();
+          wallAudioRef.current.currentTime = 0;
+          break;
+        case 'score':
+          if (scoreAudioRef.current === null) return;
+          scoreAudioRef.current.play();
+          scoreAudioRef.current.currentTime = 0;
+          break;
+      }
+    };
 
     const update = () => {
       const { ball, keys, players, walls } = stateRef.current;
@@ -273,6 +275,8 @@ const Quadrapong: NextPage = () => {
 
         // Check if ball is colliding with player
         if (bb > pt && bt < pb && br > pl && bl < pr) {
+          playSound('paddle');
+
           // Reset ball to 'front' of paddle
           if (position === 'left') {
             ball.x = pr;
@@ -310,8 +314,6 @@ const Quadrapong: NextPage = () => {
             ball.dy =
               speed * Math.cos(newAngle) * (position === 'top' ? 1 : -1);
           }
-
-          playSound('paddle');
 
           return;
         }
@@ -609,7 +611,7 @@ const Quadrapong: NextPage = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [playSound]);
+  }, []);
 
   const start = useCallback(() => {
     stateRef.current = {
@@ -642,6 +644,21 @@ const Quadrapong: NextPage = () => {
       y: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
     };
   }, []);
+
+  useEffect(() => {
+    const keydownHandler = (event: any) => {
+      switch (event.code) {
+        case 'Backspace':
+          router.push('/');
+          break;
+      }
+    };
+
+    addEventListener('keydown', keydownHandler);
+    return () => {
+      removeEventListener('keydown', keydownHandler);
+    };
+  }, [router]);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-950">
