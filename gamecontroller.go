@@ -10,30 +10,43 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-// func (a *App) ReadControllerState(index int) *string {
-// 	controller, ok := a.controllers[xinput.ControllerIndex(index)]
-// 	if !ok {
-// 		runtime.LogErrorf(a.ctx, "Controller %d not found", index)
-// 		return nil
-// 	}
+func (a *App) ReadControllerState(buzzerId string) *string {
+	index := xinput.ControllerIndex(255)
+	for _, buzzer := range a.buzzers {
+		if buzzer.Id == buzzerId {
+			index = buzzer.ControllerIndex
+			break
+		}
+	}
+	if index == 255 {
+		runtime.LogErrorf(a.ctx, "Buzzer %s not found", buzzerId)
+		runtime.LogErrorf(a.ctx, "Buzzers: %v", a.buzzers)
+		return nil
+	}
 
-// 	controller.mutex.RLock()
-// 	defer controller.mutex.RUnlock()
+	controller, ok := a.controllers[index]
+	if !ok {
+		runtime.LogErrorf(a.ctx, "Controller %d not found", index)
+		return nil
+	}
 
-// 	if controller.state == nil {
-// 		runtime.LogErrorf(a.ctx, "State for controller %d is nil", index)
-// 		return nil
-// 	}
+	controller.mutex.RLock()
+	defer controller.mutex.RUnlock()
 
-// 	jsonData, err := json.Marshal(controller.state)
-// 	if err != nil {
-// 		runtime.LogErrorf(a.ctx, "Failed to marshal controller state: %s", err)
-// 		return nil
-// 	}
+	if controller.state == nil {
+		runtime.LogErrorf(a.ctx, "State for controller %d is nil", index)
+		return nil
+	}
 
-// 	str := string(jsonData)
-// 	return &str
-// }
+	jsonData, err := json.Marshal(controller.state)
+	if err != nil {
+		runtime.LogErrorf(a.ctx, "Failed to marshal controller state: %s", err)
+		return nil
+	}
+
+	str := string(jsonData)
+	return &str
+}
 
 // Should be called in a goroutine
 func (a *App) pollForControllers() {

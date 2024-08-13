@@ -8,6 +8,6 @@ export function ListBuzzerIds():Promise<Array<string>>;
 
 export function ListTeams():Promise<Array<main.Team>>;
 
-export function ReadControllerState():Promise<any>;
+export function ReadControllerState(arg1:string):Promise<any>;
 
 export function SaveTeams(arg1:Array<main.Team>):Promise<void>;

@@ -14,8 +14,8 @@ export function ListTeams() {
   return window['go']['main']['App']['ListTeams']();
 }
 
-export function ReadControllerState() {
-  return window['go']['main']['App']['ReadControllerState']();
+export function ReadControllerState(arg1) {
+  return window['go']['main']['App']['ReadControllerState'](arg1);
 }
 
 export function SaveTeams(arg1) {
