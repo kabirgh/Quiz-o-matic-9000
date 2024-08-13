@@ -9,12 +9,18 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+type Controller struct {
+	state *xinput.ControllerState
+	mutex sync.RWMutex
+}
+
 // App struct
 type App struct {
 	ctx          context.Context
 	teams        []Team
 	buzzers      []Buzzer
 	buzzersMutex sync.Mutex
+	controllers  map[xinput.ControllerIndex]*Controller
 }
 
 type Buzzer struct {
@@ -67,6 +73,7 @@ func NewApp() *App {
 		buzzers: []Buzzer{
 			{Id: "Keyboard", Conn: nil},
 		},
+		controllers: make(map[xinput.ControllerIndex]*Controller),
 	}
 }
 
