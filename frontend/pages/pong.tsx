@@ -2,7 +2,7 @@ import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { useWebAudio } from './hooks';
+import usePongAudio from '../lib/usePongAudio';
 
 type Player = {
   x: number;
@@ -118,7 +118,7 @@ const DEFAULT_WALLS: Wall[] = [
 
 const Quadrapong: NextPage = () => {
   const router = useRouter();
-  const playSound = useWebAudio();
+  const playSound = usePongAudio();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const paddleAudioRef = useRef<HTMLAudioElement | null>(null);
   const wallAudioRef = useRef<HTMLAudioElement | null>(null);

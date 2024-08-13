@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-export const useWebAudio = () => {
+const useWebAudio = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioBuffersRef = useRef<{ [key: string]: AudioBuffer }>({});
 
@@ -37,3 +37,5 @@ export const useWebAudio = () => {
 
   return playSound;
 };
+
+export default useWebAudio;
