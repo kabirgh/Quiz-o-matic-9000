@@ -38,22 +38,24 @@ type State = {
   keys: { [key: string]: boolean };
 };
 
+const SCORE_LENGTH = 14;
+const SCORE_THICKNESS = 5;
+const SCORE_GAP = 9;
 const CANVAS_SIZE = 600;
 const PADDLE_LENGTH = 80;
-const PADDLE_THICKNESS = 6;
+const PADDLE_THICKNESS = 8;
 const WALL_THICKNESS = PADDLE_THICKNESS;
 const WALL_LENGTH = 80;
-const WALL_OFFSET = 18;
+const WALL_OFFSET = SCORE_LENGTH + 4;
 const PADDLE_OFFSET = WALL_OFFSET + WALL_THICKNESS + 8;
 // Let the player stop 4 pixels from the wall
 const PADDLE_STOP = WALL_OFFSET + WALL_THICKNESS + 4;
-const BALL_SIZE = 8;
+const BALL_SIZE = 10;
 const INITIAL_BALL_SPEED = 0.18;
 const SPEED_MULTIPLIER = 1.1;
 const PADDLE_SPEED = 0.8;
-const STARTING_LIVES = 4;
-const SCORE_THICKNESS = 4;
-const SCORE_LENGTH = 12;
+const STARTING_LIVES = 2;
+
 // I'm not sure this works, but here just in case it helps at smaller speeds
 const COLLISION_EXTENSION = 1000;
 
@@ -123,6 +125,7 @@ const Quadrapong: NextPage = () => {
   const paddleAudioRef = useRef<HTMLAudioElement | null>(null);
   const wallAudioRef = useRef<HTMLAudioElement | null>(null);
   const scoreAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [startingLives, setStartingLives] = useState(STARTING_LIVES);
 
   const [initialAngle] = useState(Math.random() * Math.PI * 2);
   const [, setRenderTrigger] = useState({});
@@ -137,28 +140,28 @@ const Quadrapong: NextPage = () => {
         y: 0 + PADDLE_OFFSET,
         name: 'top',
         color: '#E8293C',
-        lives: STARTING_LIVES,
+        lives: startingLives,
       },
       bottom: {
         x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
         y: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
         name: 'bottom',
         color: '#5596E6',
-        lives: STARTING_LIVES,
+        lives: startingLives,
       },
       left: {
         x: 0 + PADDLE_OFFSET,
         y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
         name: 'left',
         color: '#00B4A0',
-        lives: STARTING_LIVES,
+        lives: startingLives,
       },
       right: {
         x: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
         y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
         name: 'right',
         color: '#FDD600',
-        lives: STARTING_LIVES,
+        lives: startingLives,
       },
     },
     ball: {
@@ -499,7 +502,7 @@ const Quadrapong: NextPage = () => {
                 WALL_LENGTH -
                 SCORE_THICKNESS -
                 1 -
-                i * 7,
+                i * SCORE_GAP,
               SCORE_LENGTH,
               SCORE_THICKNESS,
             );
@@ -512,7 +515,7 @@ const Quadrapong: NextPage = () => {
                 WALL_THICKNESS -
                 WALL_LENGTH +
                 1 +
-                i * 7,
+                i * SCORE_GAP,
               SCORE_LENGTH,
               SCORE_THICKNESS,
             );
@@ -524,7 +527,7 @@ const Quadrapong: NextPage = () => {
                 WALL_THICKNESS -
                 WALL_LENGTH +
                 1 +
-                i * 7,
+                i * SCORE_GAP,
               0,
               SCORE_THICKNESS,
               SCORE_LENGTH,
@@ -537,7 +540,7 @@ const Quadrapong: NextPage = () => {
                 WALL_LENGTH -
                 SCORE_THICKNESS -
                 1 -
-                i * 7,
+                i * SCORE_GAP,
               CANVAS_SIZE - SCORE_LENGTH,
               SCORE_THICKNESS,
               SCORE_LENGTH,
@@ -615,29 +618,29 @@ const Quadrapong: NextPage = () => {
     };
     stateRef.current.players.left = {
       ...stateRef.current.players.left,
-      lives: STARTING_LIVES,
+      lives: startingLives,
       x: 0 + PADDLE_OFFSET,
       y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
     };
     stateRef.current.players.right = {
       ...stateRef.current.players.right,
-      lives: STARTING_LIVES,
+      lives: startingLives,
       x: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
       y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
     };
     stateRef.current.players.top = {
       ...stateRef.current.players.top,
-      lives: STARTING_LIVES,
+      lives: startingLives,
       x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
       y: 0 + PADDLE_OFFSET,
     };
     stateRef.current.players.bottom = {
       ...stateRef.current.players.bottom,
-      lives: STARTING_LIVES,
+      lives: startingLives,
       x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
       y: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
     };
-  }, []);
+  }, [startingLives]);
 
   useEffect(() => {
     const keydownHandler = (event: any) => {
@@ -662,13 +665,24 @@ const Quadrapong: NextPage = () => {
         height={CANVAS_SIZE}
         // className="border border-solid border-white"
       />
-      <div>
+      <div
+        className="flex flex-col items-center justify-center"
+        style={{
+          visibility:
+            stateRef.current.phase === 'in_progress' ? 'hidden' : 'visible',
+        }}
+      >
+        <input
+          className="w-10 mx-4"
+          type="number"
+          placeholder="lives"
+          value={startingLives}
+          onChange={(e) => {
+            setStartingLives(e.target.valueAsNumber);
+          }}
+        />
         <button
           className="text-sm px-3 py-1 mb-0 mt-2"
-          style={{
-            visibility:
-              stateRef.current.phase === 'in_progress' ? 'hidden' : 'visible',
-          }}
           disabled={false}
           onClick={() => start()}
         >
