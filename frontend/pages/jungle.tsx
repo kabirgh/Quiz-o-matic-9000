@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 type Player = {
   name: string;
@@ -29,7 +29,7 @@ type State = {
 };
 
 const GAME_SIZE = 600;
-const PLAYER_SIZE = 40;
+const PLAYER_SIZE = 44;
 const GRID_COLS = 12;
 const ANIMAL_SIZE = 64;
 const BG_IMAGES = ['/images/jungle/g1n.png', '/images/jungle/g2n.png'];
@@ -45,6 +45,7 @@ const ANIMAL_SRCS = {
   owl: '/images/jungle/owl.png',
   sloth: '/images/jungle/sloth.png',
 };
+const STARTING_ANIMALS = 10;
 
 type ViewfinderProps = {
   color: string;
@@ -54,7 +55,7 @@ const Viewfinder = ({ color }: ViewfinderProps) => {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
       {/* <!-- Corners --> */}
       <path
-        d="M5 25 V5 H25 M75 5 H95 V25 M5 75 V95 H25 M75 95 H95 V75"
+        d="M5 25 V20 Q5 5 20 5 H25 M75 5 H80 Q95 5 95 20 V25 M5 75 V80 Q5 95 20 95 H25 M75 95 H80 Q95 95 95 80 V75"
         stroke={color}
         strokeWidth="7"
         fill="none"
@@ -68,6 +69,7 @@ const Viewfinder = ({ color }: ViewfinderProps) => {
 
 const JungleSeek: NextPage = () => {
   const router = useRouter();
+  const gridRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef<State>({
     lastTick: 0,
     phase: 'not_started',
@@ -77,14 +79,80 @@ const JungleSeek: NextPage = () => {
         name: 'Player 1',
         color: 'red',
         score: 0,
-        x: 50,
-        y: 50,
+        x: -PLAYER_SIZE,
+        y: -PLAYER_SIZE,
       },
     ],
     animals: [],
-    numAnimals: 60,
+    numAnimals: STARTING_ANIMALS,
   });
   const [, setRenderTrigger] = useState({});
+
+  const isAnimalOverlapping = useCallback((x: number, y: number): boolean => {
+    if (!stateRef.current.animals) return false;
+
+    for (const animal of stateRef.current.animals) {
+      // Might be undefined if we initialise the array with size
+      if (!animal) continue;
+      // Allow partial overlap
+      if (
+        Math.abs(animal.x - x) < ANIMAL_SIZE / 2 &&
+        Math.abs(animal.y - y) < ANIMAL_SIZE / 2
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }, []);
+
+  const generateAnimalPositions = useCallback(() => {
+    const state = stateRef.current;
+    // Reset animals
+    state.animals = [];
+
+    // Select one animal to be the target
+    const targetAnimal = structuredClone(
+      ANIMALS[Math.floor(Math.random() * ANIMALS.length)],
+    );
+    // Place the target animal randomly
+    targetAnimal.x = Math.floor(Math.random() * GAME_SIZE);
+    targetAnimal.y = Math.floor(Math.random() * GAME_SIZE);
+    state.animals[0] = targetAnimal;
+
+    // Remove the target animal from the list of animals
+    const animals = ANIMALS.filter(
+      (animal) => animal.name !== targetAnimal.name,
+    );
+
+    // Place animals randomly
+    for (let i = 1; i < state.numAnimals; i++) {
+      const animal = structuredClone(animals[i % animals.length]);
+      // Place the animal randomly
+      do {
+        // Clamp to avoid placing the animal outside the game area
+        animal.x = Math.max(
+          ANIMAL_SIZE / 2,
+          Math.min(
+            GAME_SIZE - ANIMAL_SIZE / 2,
+            Math.floor(Math.random() * GAME_SIZE),
+          ),
+        );
+        animal.y = Math.max(
+          ANIMAL_SIZE / 2,
+          Math.min(
+            GAME_SIZE - ANIMAL_SIZE / 2,
+            Math.floor(Math.random() * GAME_SIZE),
+          ),
+        );
+      } while (
+        // Make sure there's not too much overlap
+        isAnimalOverlapping(animal.x, animal.y)
+      );
+
+      state.animals.push(animal);
+    }
+  }, [isAnimalOverlapping]);
 
   useEffect(() => {
     // Create the background grid
@@ -95,73 +163,6 @@ const JungleSeek: NextPage = () => {
           .fill(null)
           .map(() => BG_IMAGES[Math.floor(Math.random() * BG_IMAGES.length)]),
       );
-
-    const isAnimalOverlapping = (x: number, y: number): boolean => {
-      if (!stateRef.current.animals) return false;
-
-      for (const animal of stateRef.current.animals) {
-        // Might be undefined if we initialise the array with size
-        if (!animal) continue;
-        // Allow partial overlap
-        if (
-          Math.abs(animal.x - x) < ANIMAL_SIZE / 2 &&
-          Math.abs(animal.y - y) < ANIMAL_SIZE / 2
-        ) {
-          return true;
-        }
-      }
-
-      return false;
-    };
-
-    const generateAnimalPositions = () => {
-      const state = stateRef.current;
-      // Reset animals
-      state.animals = [];
-
-      // Select one animal to be the target
-      const targetAnimal = structuredClone(
-        ANIMALS[Math.floor(Math.random() * ANIMALS.length)],
-      );
-      // Place the target animal randomly
-      targetAnimal.x = Math.floor(Math.random() * GAME_SIZE);
-      targetAnimal.y = Math.floor(Math.random() * GAME_SIZE);
-      state.animals[0] = targetAnimal;
-
-      // Remove the target animal from the list of animals
-      const animals = ANIMALS.filter(
-        (animal) => animal.name !== targetAnimal.name,
-      );
-
-      // Place animals randomly
-      for (let i = 1; i < state.numAnimals; i++) {
-        const animal = structuredClone(animals[i % animals.length]);
-        // Place the animal randomly
-        do {
-          // Clamp to avoid placing the animal outside the game area
-          animal.x = Math.max(
-            ANIMAL_SIZE / 2,
-            Math.min(
-              GAME_SIZE - ANIMAL_SIZE / 2,
-              Math.floor(Math.random() * GAME_SIZE),
-            ),
-          );
-          animal.y = Math.max(
-            ANIMAL_SIZE / 2,
-            Math.min(
-              GAME_SIZE - ANIMAL_SIZE / 2,
-              Math.floor(Math.random() * GAME_SIZE),
-            ),
-          );
-        } while (
-          // Make sure there's not too much overlap
-          isAnimalOverlapping(animal.x, animal.y)
-        );
-
-        state.animals.push(animal);
-      }
-    };
-    generateAnimalPositions();
 
     const update = (deltaTime: number) => {
       // Update game state
@@ -187,68 +188,146 @@ const JungleSeek: NextPage = () => {
     animationFrameId = window.requestAnimationFrame(loop);
   }, []);
 
+  useEffect(() => {
+    const clickHandler = (event: MouseEvent) => {
+      if (stateRef.current.phase !== 'in_progress') return;
+      if (!gridRef.current) return;
+
+      // Get the bounding rectangle of the grid
+      const rect = gridRef.current.getBoundingClientRect();
+      // Calculate the click position relative to the grid
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      // Don't allow clicks outside the grid
+      if (x < 0 || x > GAME_SIZE || y < 0 || y > GAME_SIZE) return;
+      // Update player position (as percentage of grid size)
+      stateRef.current.players[0].x = (x / GAME_SIZE) * 100;
+      stateRef.current.players[0].y = (y / GAME_SIZE) * 100;
+    };
+
+    window.addEventListener('click', clickHandler);
+    return () => {
+      window.removeEventListener('click', clickHandler);
+    };
+  }, []);
+
+  const start = useCallback(() => {
+    stateRef.current = {
+      grid: stateRef.current.grid,
+      players: stateRef.current.players.map((player) => ({
+        ...player,
+        score: 0,
+        x: 50,
+        y: 50,
+      })),
+      lastTick: 0,
+      phase: 'in_progress',
+      animals: [],
+      numAnimals: STARTING_ANIMALS,
+    };
+    generateAnimalPositions();
+  }, [generateAnimalPositions]);
+
   return (
-    <div className="min-h-screen w-full bg-repeat bg-[#8ad2da]">
-      <div className="flex items-center justify-center min-h-screen">
-        {/* Grid container */}
+    <div className="flex flex-col justify-center items-center h-screen w-full bg-repeat bg-[#8ad2da]">
+      <div className="grid grid-cols-[1fr_2fr_1fr]">
+        <div id="left-pane"></div>
         <div
-          className="w-full aspect-square rounded-lg overflow-hidden shadow-md relative"
-          style={{
-            width: GAME_SIZE,
-            height: GAME_SIZE,
-          }}
+          id="middle-pane"
+          className="flex items-center justify-center w-full"
         >
-          {/* Grass bg */}
           <div
-            className="grid w-full h-full"
+            id="grid-container"
+            className="w-full aspect-square rounded-lg overflow-hidden shadow-md relative"
             style={{
-              gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
+              width: GAME_SIZE,
+              height: GAME_SIZE,
             }}
           >
-            {stateRef.current.grid.flat().map((image, index) => (
-              <div key={index} className="relative">
-                <img
-                  src={image}
-                  alt={`Tile ${index}`}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
+            <div
+              id="grid-grass-bg"
+              ref={gridRef}
+              className="grid w-full h-full"
+              style={{
+                gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
+              }}
+            >
+              {stateRef.current.grid.flat().map((image, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={image}
+                    alt={`Tile ${index}`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+            {/* Animals */}
+            {stateRef.current.animals.map((animal, i) => (
+              <img
+                key={i}
+                src={ANIMAL_SRCS[animal.name]}
+                alt={animal.name}
+                className="absolute"
+                style={{
+                  top: `${animal.y}px`,
+                  left: `${animal.x}px`,
+                  width: 'auto',
+                  height: ANIMAL_SIZE,
+                  transform: `translate(-50%, -50%)`,
+                }}
+              />
+            ))}
+            {/* Player cursors */}
+            {stateRef.current.players.map((player) => (
+              <div
+                key={player.name}
+                style={{
+                  position: 'absolute',
+                  top: `${player.y}%`,
+                  left: `${player.x}%`,
+                  width: `${(PLAYER_SIZE / GAME_SIZE) * 100}%`,
+                  height: `${(PLAYER_SIZE / GAME_SIZE) * 100}%`,
+                  transform: 'translate(-50%, -50%)', // Center the player on its position
+                  backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                  border: `2px solid rgba(0, 0, 0, 0.01)`,
+                  borderRadius: '20%',
+                }}
+              >
+                <Viewfinder color={player.color} />
               </div>
             ))}
           </div>
-          {/* Animals */}
-          {stateRef.current.animals.map((animal, i) => (
-            <img
-              key={i}
-              src={ANIMAL_SRCS[animal.name]}
-              alt={animal.name}
-              className="absolute"
-              style={{
-                top: `${animal.y}px`,
-                left: `${animal.x}px`,
-                width: 'auto',
-                height: ANIMAL_SIZE,
-                transform: `translate(-50%, -50%)`,
-              }}
-            />
-          ))}
-          {/* Player cursors */}
-          {stateRef.current.players.map((player) => (
-            <div
-              key={player.name}
-              style={{
-                position: 'absolute',
-                top: `${player.y}%`,
-                left: `${player.x}%`,
-                width: `${(PLAYER_SIZE / GAME_SIZE) * 100}%`,
-                height: `${(PLAYER_SIZE / GAME_SIZE) * 100}%`,
-                transform: 'translate(-50%, -50%)', // Center the player on its position
-                backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                border: `2px solid rgba(255, 255, 255, 0.01)`,
-              }}
-            >
-              <Viewfinder color={player.color} />
+        </div>
+        <div id="right-pane" className="flex flex-col items-center mx-16 w-max">
+          <div className="flex flex-col justify-center items-center bg-[#666] px-4 py-4 rounded-lg shadow-md">
+            <div>Target</div>
+            <div>
+              <img
+                className="w-16 h-auto mt-4"
+                src={ANIMAL_SRCS[stateRef.current.animals[0]?.name]}
+                alt={stateRef.current.animals[0]?.name}
+              />
             </div>
-          ))}
+          </div>
+          <div className="flex flex-col justify-center items-center bg-[#a0a] px-4 py-4 rounded-lg shadow-md mt-12">
+            <div className="mb-2">Scores</div>
+            {stateRef.current.players.map((player) => (
+              <div key={player.name} className="my-2">
+                {player.name}: {player.score}
+              </div>
+            ))}
+          </div>
+          <button
+            className="text-sm px-3 py-1 mb-0 mt-4"
+            style={{
+              visibility:
+                stateRef.current.phase === 'in_progress' ? 'hidden' : 'visible',
+            }}
+            onClick={() => start()}
+          >
+            Start
+          </button>
         </div>
       </div>
     </div>
