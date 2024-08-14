@@ -46,6 +46,9 @@ const ANIMAL_SRCS = {
   sloth: '/images/jungle/sloth.png',
 };
 const STARTING_ANIMALS = 10;
+// Becomes harder to find positions for animals
+// and also to find them around this number
+const MAX_ANIMALS = 120;
 
 type ViewfinderProps = {
   color: string;
@@ -87,6 +90,11 @@ const JungleSeek: NextPage = () => {
     numAnimals: STARTING_ANIMALS,
   });
   const [, setRenderTrigger] = useState({});
+
+  const changeNumberOfAnimals = useCallback((numAnimals: number) => {
+    stateRef.current.numAnimals = Math.min(MAX_ANIMALS, numAnimals);
+    generateAnimalPositions();
+  }, []);
 
   const isAnimalOverlapping = useCallback((x: number, y: number): boolean => {
     if (!stateRef.current.animals) return false;
@@ -300,7 +308,7 @@ const JungleSeek: NextPage = () => {
           </div>
         </div>
         <div id="right-pane" className="flex flex-col items-center mx-16 w-max">
-          <div className="flex flex-col justify-center items-center bg-[#666] px-4 py-4 rounded-lg shadow-md">
+          <div className="flex flex-col justify-center items-center bg-[#666] px-4 py-4 rounded-lg shadow-md h-[100px]">
             <div>Target</div>
             <div>
               <img
@@ -328,6 +336,23 @@ const JungleSeek: NextPage = () => {
           >
             Start
           </button>
+          <button
+            onClick={() =>
+              changeNumberOfAnimals(stateRef.current.numAnimals + 10)
+            }
+          >
+            Add 10 Animals
+          </button>
+          <button
+            onClick={() =>
+              changeNumberOfAnimals(
+                Math.max(1, stateRef.current.numAnimals - 10),
+              )
+            }
+          >
+            Remove 10 Animals
+          </button>
+          <div>Number of animals: {stateRef.current.numAnimals}</div>
         </div>
       </div>
     </div>
