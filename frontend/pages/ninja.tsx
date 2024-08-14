@@ -25,6 +25,7 @@ type Player = {
   currentFrame: number;
   lastFrameUpdate: number;
   wall: 'left' | 'right' | 'none';
+  msPerFrame: number;
 };
 
 type Obstacle = {
@@ -143,24 +144,6 @@ const PlayerSprite = ({
         rotate: rotate,
       }}
     >
-      {/* Outline */}
-      {/* {[-0.5, 0.5].map((offset) => (
-        <div
-          key={offset}
-          style={{
-            position: 'absolute',
-            left: offset,
-            top: offset,
-            width: PLAYER_SIZE,
-            height: PLAYER_SIZE,
-            backgroundImage: `url('${url}')`,
-            backgroundPosition: `-${currentFrame * PLAYER_SIZE}px 0px`,
-            backgroundSize: 'auto 100%',
-            filter: 'brightness(0) invert(1)', // White outline
-          }}
-        />
-      ))} */}
-      {/* Main sprite */}
       <div
         style={{
           position: 'absolute',
@@ -234,7 +217,7 @@ const GameScreen = ({ player, obstacles }: GameScreenState) => (
         width: GAME_WIDTH,
         height: GAME_HEIGHT,
         background: `
-          linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.7)),
+          linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.9)),
           url('images/ninja/bg4.jpeg') no-repeat center center
         `,
         backgroundSize: '100% 100%',
@@ -327,75 +310,12 @@ const DEFAULT_OBSTACLES: Obstacle[] = [
 const PLAYER_SIZE = 72;
 const PLAYER_VX = 1.2;
 
-const DEFAULT_PLAYERS: Player[] = [
-  {
-    name: 'Player 1',
-    color: 'blue',
-    buzzerId: '1',
-    x: 0,
-    y: GAME_HEIGHT * 0.6,
-    vx: 0,
-    score: 0,
-    obstacles: DEFAULT_OBSTACLES,
-    isGameOver: false,
-    currentAnimation: 'run',
-    wall: 'left',
-    currentFrame: 3,
-    lastFrameUpdate: Date.now(),
-  },
-  {
-    name: 'Lizard Wizard',
-    color: 'green',
-    buzzerId: '2',
-    x: 0,
-    y: GAME_HEIGHT * 0.6,
-    vx: 0,
-    score: 0,
-    obstacles: DEFAULT_OBSTACLES,
-    isGameOver: false,
-    currentAnimation: 'run',
-    wall: 'left',
-    currentFrame: 3,
-    lastFrameUpdate: Date.now(),
-  },
-  {
-    name: 'Surprise Entrant',
-    color: 'red',
-    buzzerId: '3',
-    x: 0,
-    y: GAME_HEIGHT * 0.6,
-    vx: 0,
-    score: 0,
-    obstacles: DEFAULT_OBSTACLES,
-    isGameOver: false,
-    currentAnimation: 'run',
-    wall: 'left',
-    currentFrame: 3,
-    lastFrameUpdate: Date.now(),
-  },
-  {
-    name: 'Bonk',
-    color: 'yellow',
-    buzzerId: '4',
-    x: 0,
-    y: GAME_HEIGHT * 0.6,
-    vx: 0,
-    score: 0,
-    obstacles: DEFAULT_OBSTACLES,
-    isGameOver: false,
-    currentAnimation: 'run',
-    wall: 'left',
-    currentFrame: 3, // 3 looks nicest
-    lastFrameUpdate: Date.now(),
-  },
-];
-
 const ANIMATIONS = {
   run: {
     url: 'sprites/runsheet.png',
     frames: 8,
     hitbox: { xb: 12, xf: 14, yb: 0, yt: 12 },
-    msPerFrame: 70,
+    msPerFrame: 80,
   },
   roll: {
     url: 'sprites/rollsheet.png',
@@ -424,11 +344,79 @@ const ANIMATIONS = {
   },
 };
 
+const DEFAULT_PLAYERS: Player[] = [
+  {
+    name: 'Player 1',
+    color: 'blue',
+    buzzerId: '1',
+    x: 0,
+    y: GAME_HEIGHT * 0.6,
+    vx: 0,
+    score: 0,
+    obstacles: DEFAULT_OBSTACLES,
+    isGameOver: false,
+    currentAnimation: 'run',
+    msPerFrame: ANIMATIONS.run.msPerFrame,
+    wall: 'left',
+    currentFrame: 3,
+    lastFrameUpdate: Date.now(),
+  },
+  {
+    name: 'Lizard Wizard',
+    color: 'green',
+    buzzerId: '2',
+    x: 0,
+    y: GAME_HEIGHT * 0.6,
+    vx: 0,
+    score: 0,
+    obstacles: DEFAULT_OBSTACLES,
+    isGameOver: false,
+    currentAnimation: 'run',
+    msPerFrame: ANIMATIONS.run.msPerFrame,
+    wall: 'left',
+    currentFrame: 3,
+    lastFrameUpdate: Date.now(),
+  },
+  {
+    name: 'Surprise Entrant',
+    color: 'red',
+    buzzerId: '3',
+    x: 0,
+    y: GAME_HEIGHT * 0.6,
+    vx: 0,
+    score: 0,
+    obstacles: DEFAULT_OBSTACLES,
+    isGameOver: false,
+    currentAnimation: 'run',
+    msPerFrame: ANIMATIONS.run.msPerFrame,
+    wall: 'left',
+    currentFrame: 3,
+    lastFrameUpdate: Date.now(),
+  },
+  {
+    name: 'Bonk',
+    color: 'yellow',
+    buzzerId: '4',
+    x: 0,
+    y: GAME_HEIGHT * 0.6,
+    vx: 0,
+    score: 0,
+    obstacles: DEFAULT_OBSTACLES,
+    isGameOver: false,
+    currentAnimation: 'run',
+    msPerFrame: ANIMATIONS.run.msPerFrame,
+    wall: 'left',
+    currentFrame: 3, // 3 looks nicest
+    lastFrameUpdate: Date.now(),
+  },
+];
+
 //
 // Game
 //
 const NinjaRun: NextPage = () => {
   const router = useRouter();
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [, setRenderTrigger] = useState({});
   const [loadingPlayers, setLoadingPlayers] = useState(true);
 
@@ -477,6 +465,7 @@ const NinjaRun: NextPage = () => {
           obstacles: [],
           isGameOver: false,
           currentAnimation: 'run',
+          msPerFrame: ANIMATIONS.run.msPerFrame,
           wall: 'left',
           currentFrame: 0,
           lastFrameUpdate: Date.now(),
@@ -497,6 +486,7 @@ const NinjaRun: NextPage = () => {
         obstacles: [],
         isGameOver: false,
         currentAnimation: 'run',
+        msPerFrame: ANIMATIONS.run.msPerFrame,
         wall: 'left',
         currentFrame: 0,
         lastFrameUpdate: Date.now(),
@@ -509,6 +499,10 @@ const NinjaRun: NextPage = () => {
       gameStartTime: Date.now(),
       speedUpdateAccumulator: 0,
     };
+
+    if (audioRef.current && audioRef.current.paused) {
+      audioRef.current.play();
+    }
   }, []);
 
   useEffect(() => {
@@ -533,6 +527,12 @@ const NinjaRun: NextPage = () => {
       // Update the speed based on the number of intervals passed
       state.speed *= Math.pow(1.015, intervals);
       state.speedUpdateAccumulator -= intervals * 500;
+
+      for (const player of state.players) {
+        // Increase running speed
+        player.msPerFrame -= 0.15;
+      }
+      console.log(state.players[0].msPerFrame);
     }
   }, []);
 
@@ -730,11 +730,7 @@ const NinjaRun: NextPage = () => {
       }
 
       // Update animation frame
-      if (
-        player.lastFrameUpdate +
-          ANIMATIONS[player.currentAnimation].msPerFrame <
-        now
-      ) {
+      if (player.lastFrameUpdate + player.msPerFrame < now) {
         const currentFrame =
           (player.currentFrame + 1) %
           ANIMATIONS[player.currentAnimation].frames;
@@ -887,6 +883,7 @@ const NinjaRun: NextPage = () => {
         >
           {gameState.current.phase === 'not_started' ? 'Start' : 'Play again'}
         </button>
+        <audio ref={audioRef} src="/audio/ninja/bg2.mp3" hidden loop />
       </div>
     </div>
   );
