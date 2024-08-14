@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 type Player = {
   name: string;
+  buzzerId: string;
   color: string;
   score: number;
   // % numbers
@@ -72,6 +73,7 @@ const Viewfinder = ({ color }: ViewfinderProps) => {
 
 const JungleSeek: NextPage = () => {
   const router = useRouter();
+  const audioRef = useRef<HTMLAudioElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef<State>({
     lastTick: 0,
@@ -80,6 +82,7 @@ const JungleSeek: NextPage = () => {
     players: [
       {
         name: 'Player 1',
+        buzzerId: 'Controller 1',
         color: 'red',
         score: 0,
         x: -PLAYER_SIZE,
@@ -172,6 +175,8 @@ const JungleSeek: NextPage = () => {
           .map(() => BG_IMAGES[Math.floor(Math.random() * BG_IMAGES.length)]),
       );
 
+    const pollControllers = () => {};
+
     const update = (deltaTime: number) => {
       // Update game state
     };
@@ -188,6 +193,7 @@ const JungleSeek: NextPage = () => {
       const deltaTime = time - stateRef.current.lastTick;
       stateRef.current.lastTick = time;
 
+      pollControllers();
       update(deltaTime);
       setRenderTrigger({});
       animationFrameId = window.requestAnimationFrame(loop);
@@ -234,6 +240,9 @@ const JungleSeek: NextPage = () => {
       numAnimals: STARTING_ANIMALS,
     };
     generateAnimalPositions();
+    if (audioRef.current && audioRef.current.paused) {
+      audioRef.current.play();
+    }
   }, [generateAnimalPositions]);
 
   return (
@@ -355,6 +364,7 @@ const JungleSeek: NextPage = () => {
           <div>Number of animals: {stateRef.current.numAnimals}</div>
         </div>
       </div>
+      <audio ref={audioRef} src="/audio/jungle/bg.mp3" hidden loop />
     </div>
   );
 };
