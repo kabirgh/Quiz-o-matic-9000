@@ -13,28 +13,22 @@ type GameCardProps = {
 
 const games = [
   {
-    name: 'PONG',
-    font: 'Pong Score',
-    imageUrl: '/images/pong2.png',
-    url: '/pong',
-  },
-  {
     name: 'Ninja Run',
     font: 'Courier New',
     imageUrl: '/images/ninjarun.png',
     url: '/ninja',
   },
   {
-    name: 'Snake',
-    font: 'Trebuchet MS',
-    imageUrl: '/images/snake.png',
-    url: '/snake',
+    name: 'PONG',
+    font: 'Pong Score',
+    imageUrl: '/images/pong.png',
+    url: '/pong',
   },
   {
-    name: 'Memory',
-    font: 'Georgia',
-    imageUrl: '/images/memory.png',
-    url: '/memory',
+    name: 'Jungle seek',
+    font: 'Trebuchet MS',
+    imageUrl: '/images/jungle.png',
+    url: '/jungle',
   },
 ];
 
