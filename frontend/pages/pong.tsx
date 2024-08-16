@@ -3,12 +3,14 @@ import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import usePongAudio from '../lib/usePongAudio';
+import { ReadControllers } from '../wailsjs/wailsjs/go/main/App';
 
 type Player = {
   x: number;
   y: number;
   name: string;
   color: string;
+  buzzerId: string;
   lives: number;
 };
 
@@ -53,7 +55,7 @@ const PADDLE_STOP = WALL_OFFSET + WALL_THICKNESS + 4;
 const BALL_SIZE = 10;
 const INITIAL_BALL_SPEED = 0.18;
 const SPEED_MULTIPLIER = 1.1;
-const PADDLE_SPEED = 0.8;
+const JOYSTICK_SENSITIVITY = 0.6;
 const STARTING_LIVES = 2;
 
 // I'm not sure this works, but here just in case it helps at smaller speeds
@@ -140,6 +142,7 @@ const Quadrapong: NextPage = () => {
         y: 0 + PADDLE_OFFSET,
         name: 'top',
         color: '#E8293C',
+        buzzerId: '',
         lives: startingLives,
       },
       bottom: {
@@ -147,6 +150,7 @@ const Quadrapong: NextPage = () => {
         y: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
         name: 'bottom',
         color: '#5596E6',
+        buzzerId: '',
         lives: startingLives,
       },
       left: {
@@ -154,6 +158,7 @@ const Quadrapong: NextPage = () => {
         y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
         name: 'left',
         color: '#00B4A0',
+        buzzerId: 'Controller 1',
         lives: startingLives,
       },
       right: {
@@ -161,6 +166,7 @@ const Quadrapong: NextPage = () => {
         y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
         name: 'right',
         color: '#FDD600',
+        buzzerId: '',
         lives: startingLives,
       },
     },
@@ -199,20 +205,34 @@ const Quadrapong: NextPage = () => {
       }
 
       // Move players
-      switch (true) {
-        case keys.a:
-          players.bottom.x = Math.max(
-            PADDLE_STOP,
-            players.bottom.x - PADDLE_SPEED * deltaTime,
-          );
-          break;
-        case keys.d:
-          players.bottom.x = Math.min(
-            CANVAS_SIZE - PADDLE_LENGTH - PADDLE_STOP,
-            players.bottom.x + PADDLE_SPEED * deltaTime,
-          );
-          break;
-      }
+      ReadControllers().then((json) => {
+        const controllers = JSON.parse(json);
+
+        for (const [position, player] of Object.entries(players)) {
+          const controller = controllers[player.buzzerId];
+          if (!controller) continue;
+
+          if (position === 'left' || position === 'right') {
+            const dy = -controller.LeftJoystick.Y || 0; // invert Y axis
+            player.y = Math.max(
+              PADDLE_STOP,
+              Math.min(
+                CANVAS_SIZE - PADDLE_LENGTH - PADDLE_STOP,
+                player.y + dy * deltaTime * JOYSTICK_SENSITIVITY,
+              ),
+            );
+          } else {
+            const dx = controller.LeftJoystick.X || 0;
+            player.x = Math.max(
+              PADDLE_STOP,
+              Math.min(
+                CANVAS_SIZE - PADDLE_LENGTH - PADDLE_STOP,
+                player.x + dx * deltaTime * JOYSTICK_SENSITIVITY,
+              ),
+            );
+          }
+        }
+      });
 
       // Update ball position
       ball.x += ball.dx * deltaTime;
