@@ -5,19 +5,22 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ReadControllers } from '../wailsjs/wailsjs/go/main/App';
 
+const DEBUG = true;
+
 type Player = {
   name: string;
   buzzerId: string;
   color: string;
   score: number;
-  // % numbers, 0-100
+  // % numbers, 0-100, centre of the player
   x: number;
   y: number;
+  state: 'active' | 'stunned';
 };
 
 type Animal = {
   name: 'bear' | 'monkey' | 'owl' | 'sloth';
-  // absolute numbers
+  // absolute numbers, centre of the animal
   x: number;
   y: number;
 };
@@ -52,6 +55,8 @@ const STARTING_ANIMALS = 10;
 // Becomes harder to find positions for animals
 // and also to find them around this number
 const MAX_ANIMALS = 120;
+const ANIMAL_OFFSCREEN_ALLOWANCE = ANIMAL_SIZE / 3;
+const ANIMAL_OVERLAP_ALLOWANCE = 0.45 * ANIMAL_SIZE; // 0-ANIMAL_SIZE/2
 const JOYSTICK_SENSITIVITY = 0.05;
 
 type ViewfinderProps = {
@@ -90,6 +95,7 @@ const JungleSeek: NextPage = () => {
         score: 0,
         x: -PLAYER_SIZE,
         y: -PLAYER_SIZE,
+        state: 'active',
       },
     ],
     animals: [],
@@ -104,10 +110,20 @@ const JungleSeek: NextPage = () => {
       // Might be undefined if we initialise the array with size
       if (!animal) continue;
       // Allow partial overlap
-      if (
-        Math.abs(animal.x - x) < ANIMAL_SIZE / 2 &&
-        Math.abs(animal.y - y) < ANIMAL_SIZE / 2
-      ) {
+      const [l1, r1, t1, b1] = [
+        x - ANIMAL_SIZE / 2,
+        x + ANIMAL_SIZE / 2,
+        y - ANIMAL_SIZE / 2,
+        y + ANIMAL_SIZE / 2,
+      ];
+      const [l2, r2, t2, b2] = [
+        animal.x - ANIMAL_SIZE / 2 + ANIMAL_OVERLAP_ALLOWANCE,
+        animal.x + ANIMAL_SIZE / 2 - ANIMAL_OVERLAP_ALLOWANCE,
+        animal.y - ANIMAL_SIZE / 2 + ANIMAL_OVERLAP_ALLOWANCE,
+        animal.y + ANIMAL_SIZE / 2 - ANIMAL_OVERLAP_ALLOWANCE,
+      ];
+
+      if (l1 < r2 && r1 > l2 && t1 < b2 && b1 > t2) {
         return true;
       }
     }
@@ -141,16 +157,16 @@ const JungleSeek: NextPage = () => {
       do {
         // Clamp to avoid placing the animal outside the game area
         animal.x = Math.max(
-          ANIMAL_SIZE / 2,
+          ANIMAL_OFFSCREEN_ALLOWANCE,
           Math.min(
-            GAME_SIZE - ANIMAL_SIZE / 2,
+            GAME_SIZE - ANIMAL_OFFSCREEN_ALLOWANCE,
             Math.floor(Math.random() * GAME_SIZE),
           ),
         );
         animal.y = Math.max(
-          ANIMAL_SIZE / 2,
+          ANIMAL_OFFSCREEN_ALLOWANCE,
           Math.min(
-            GAME_SIZE - ANIMAL_SIZE / 2,
+            GAME_SIZE - ANIMAL_OFFSCREEN_ALLOWANCE,
             Math.floor(Math.random() * GAME_SIZE),
           ),
         );
@@ -187,6 +203,7 @@ const JungleSeek: NextPage = () => {
     const update = (deltaTime: number) => {
       const state = stateRef.current;
       if (state.phase !== 'in_progress') return;
+      if (DEBUG) return;
 
       ReadControllers().then((json) => {
         const controllers = JSON.parse(json);
@@ -208,21 +225,26 @@ const JungleSeek: NextPage = () => {
           );
 
           if (controller.Buttons.A) {
-            // Check if player is overlapping with an animal
-            for (const animal of state.animals) {
-              if (
-                Math.abs(animal.x - (player.x / 100) * GAME_SIZE) <
-                  ANIMAL_SIZE / 2 &&
-                Math.abs(animal.y - (player.y / 100) * GAME_SIZE) <
-                  ANIMAL_SIZE / 2
-              ) {
-                // Check if the animal is the target
-                if (animal.name === state.animals[0].name) {
-                  player.score++;
-                  changeNumberOfAnimals(stateRef.current.numAnimals + 10);
-                  generateAnimalPositions();
-                }
-              }
+            // Check if player is overlapping with target animal
+            const targetAnimal = state.animals[0];
+            const [l, r, t, b] = [
+              targetAnimal.x - ANIMAL_SIZE / 2,
+              targetAnimal.x + ANIMAL_SIZE / 2,
+              targetAnimal.y - ANIMAL_SIZE / 2,
+              targetAnimal.y + ANIMAL_SIZE / 2,
+            ];
+
+            if (
+              (player.x * GAME_SIZE) / 100 >= l &&
+              (player.x * GAME_SIZE) / 100 <= r &&
+              (player.y * GAME_SIZE) / 100 >= t &&
+              (player.y * GAME_SIZE) / 100 <= b
+            ) {
+              player.score++;
+              changeNumberOfAnimals(stateRef.current.numAnimals + 10);
+              generateAnimalPositions();
+            } else {
+              // TODO stun player
             }
           }
         }
