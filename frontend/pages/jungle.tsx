@@ -3,12 +3,14 @@ import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+import { ReadControllers } from '../wailsjs/wailsjs/go/main/App';
+
 type Player = {
   name: string;
   buzzerId: string;
   color: string;
   score: number;
-  // % numbers
+  // % numbers, 0-100
   x: number;
   y: number;
 };
@@ -50,6 +52,7 @@ const STARTING_ANIMALS = 10;
 // Becomes harder to find positions for animals
 // and also to find them around this number
 const MAX_ANIMALS = 120;
+const JOYSTICK_SENSITIVITY = 0.05;
 
 type ViewfinderProps = {
   color: string;
@@ -93,11 +96,6 @@ const JungleSeek: NextPage = () => {
     numAnimals: STARTING_ANIMALS,
   });
   const [, setRenderTrigger] = useState({});
-
-  const changeNumberOfAnimals = useCallback((numAnimals: number) => {
-    stateRef.current.numAnimals = Math.min(MAX_ANIMALS, numAnimals);
-    generateAnimalPositions();
-  }, []);
 
   const isAnimalOverlapping = useCallback((x: number, y: number): boolean => {
     if (!stateRef.current.animals) return false;
@@ -165,6 +163,17 @@ const JungleSeek: NextPage = () => {
     }
   }, [isAnimalOverlapping]);
 
+  const changeNumberOfAnimals = useCallback(
+    (numAnimals: number) => {
+      stateRef.current.numAnimals = Math.max(
+        Math.min(MAX_ANIMALS, numAnimals),
+        0,
+      );
+      generateAnimalPositions();
+    },
+    [generateAnimalPositions],
+  );
+
   useEffect(() => {
     // Create the background grid
     stateRef.current.grid = Array(GRID_COLS)
@@ -175,10 +184,49 @@ const JungleSeek: NextPage = () => {
           .map(() => BG_IMAGES[Math.floor(Math.random() * BG_IMAGES.length)]),
       );
 
-    const pollControllers = () => {};
-
     const update = (deltaTime: number) => {
-      // Update game state
+      const state = stateRef.current;
+      if (state.phase !== 'in_progress') return;
+
+      ReadControllers().then((json) => {
+        const controllers = JSON.parse(json);
+
+        for (const player of state.players) {
+          const controller = controllers[player.buzzerId];
+          if (!controller) continue;
+
+          const dx = controller.LeftJoystick.X || 0;
+          const dy = -controller.LeftJoystick.Y || 0; // invert Y axis
+
+          player.x = Math.max(
+            0,
+            Math.min(100, player.x + dx * deltaTime * JOYSTICK_SENSITIVITY),
+          );
+          player.y = Math.max(
+            0,
+            Math.min(100, player.y + dy * deltaTime * JOYSTICK_SENSITIVITY),
+          );
+
+          if (controller.Buttons.A) {
+            // Check if player is overlapping with an animal
+            for (const animal of state.animals) {
+              if (
+                Math.abs(animal.x - (player.x / 100) * GAME_SIZE) <
+                  ANIMAL_SIZE / 2 &&
+                Math.abs(animal.y - (player.y / 100) * GAME_SIZE) <
+                  ANIMAL_SIZE / 2
+              ) {
+                // Check if the animal is the target
+                if (animal.name === state.animals[0].name) {
+                  player.score++;
+                  changeNumberOfAnimals(stateRef.current.numAnimals + 10);
+                  generateAnimalPositions();
+                }
+              }
+            }
+          }
+        }
+      });
     };
 
     let animationFrameId: number;
@@ -193,14 +241,13 @@ const JungleSeek: NextPage = () => {
       const deltaTime = time - stateRef.current.lastTick;
       stateRef.current.lastTick = time;
 
-      pollControllers();
       update(deltaTime);
       setRenderTrigger({});
       animationFrameId = window.requestAnimationFrame(loop);
     };
 
     animationFrameId = window.requestAnimationFrame(loop);
-  }, []);
+  }, [generateAnimalPositions, changeNumberOfAnimals]);
 
   useEffect(() => {
     const clickHandler = (event: MouseEvent) => {
@@ -224,6 +271,21 @@ const JungleSeek: NextPage = () => {
       window.removeEventListener('click', clickHandler);
     };
   }, []);
+
+  useEffect(() => {
+    const keydownHandler = (event: any) => {
+      switch (event.code) {
+        case 'Backspace':
+          router.push('/gamelist');
+          break;
+      }
+    };
+
+    addEventListener('keydown', keydownHandler);
+    return () => {
+      removeEventListener('keydown', keydownHandler);
+    };
+  }, [router]);
 
   const start = useCallback(() => {
     stateRef.current = {

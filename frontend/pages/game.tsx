@@ -52,14 +52,14 @@ const Game: NextPage = () => {
     [teams],
   );
 
-  useEffect(() => {
-    // Fullscreen window
-    if (fullscreen) {
-      WindowFullscreen();
-    } else {
-      WindowUnfullscreen();
-    }
-  }, [fullscreen]);
+  // useEffect(() => {
+  //   // Fullscreen window
+  //   if (fullscreen) {
+  //     WindowFullscreen();
+  //   } else {
+  //     WindowUnfullscreen();
+  //   }
+  // }, [fullscreen]);
 
   // Get teams from backend
   useEffect(() => {
@@ -109,6 +109,10 @@ const Game: NextPage = () => {
           setPlayed([]);
           router.push('/');
           break;
+        case 'KeyG':
+          if (event.shiftKey) {
+            router.push('/gamelist');
+          }
         case 'ArrowUp':
           setVolume((prev) => Math.min(prev + VOLUME_STEP, 1));
           break;

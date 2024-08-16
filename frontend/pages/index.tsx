@@ -153,14 +153,6 @@ const Main: NextPage = () => {
             setFullscreen((prev) => !prev);
           }
           break;
-        case 'KeyN':
-          if (event.shiftKey) {
-            const success = validateAndSaveTeams();
-            if (success) {
-              router.push('/ninja');
-            }
-          }
-          break;
         case 'Space':
           handleBuzzerPress('Keyboard');
           break;

@@ -3,48 +3,43 @@ package main
 import (
 	"encoding/json"
 	"slices"
-	"sync"
 	"time"
 
 	"github.com/harry1453/go-xinput/xinput"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func (a *App) ReadControllerState(buzzerId string) *string {
-	index := xinput.ControllerIndex(255)
+func (a *App) ReadControllers() *string {
+	// Buzzer id : controller state
+	state := map[string]xinput.ControllerState{}
+
+	a.buzzersMutex.Lock()
+	defer a.buzzersMutex.Unlock()
 	for _, buzzer := range a.buzzers {
-		if buzzer.Id == buzzerId {
-			index = buzzer.ControllerIndex
-			break
+		if buzzer.Controller == nil {
+			// For keyboard or boxes
+			continue
 		}
+
+		if buzzer.Controller.state == nil {
+			runtime.LogErrorf(a.ctx, "Controller state is nil for buzzer %s", buzzer.Id)
+			continue
+		}
+
+		state[buzzer.Id] = *buzzer.Controller.state
 	}
-	if index == 255 {
-		runtime.LogErrorf(a.ctx, "Buzzer %s not found", buzzerId)
-		runtime.LogErrorf(a.ctx, "Buzzers: %v", a.buzzers)
+
+	if len(state) == 0 {
 		return nil
 	}
 
-	controller, ok := a.controllers[index]
-	if !ok {
-		runtime.LogErrorf(a.ctx, "Controller %d not found", index)
-		return nil
-	}
-
-	controller.mutex.RLock()
-	defer controller.mutex.RUnlock()
-
-	if controller.state == nil {
-		runtime.LogErrorf(a.ctx, "State for controller %d is nil", index)
-		return nil
-	}
-
-	jsonData, err := json.Marshal(controller.state)
+	stateJson, err := json.Marshal(state)
 	if err != nil {
-		runtime.LogErrorf(a.ctx, "Failed to marshal controller state: %s", err)
+		runtime.LogErrorf(a.ctx, "Failed to marshal state: %s", err)
 		return nil
 	}
 
-	str := string(jsonData)
+	str := string(stateJson)
 	return &str
 }
 
@@ -68,13 +63,13 @@ func (a *App) pollForControllers() {
 
 			runtime.LogInfof(a.ctx, "%s connected", index)
 
+			// Initialize controller. State will be set in pollControllerInput
+			controller := Controller{index: index, state: nil}
+
 			a.buzzersMutex.Lock()
-			a.buzzers = append(a.buzzers, Buzzer{Id: buzzerId, ControllerIndex: index})
+			a.buzzers = append(a.buzzers, Buzzer{Id: buzzerId, Controller: &controller})
 			a.buzzersMutex.Unlock()
 			runtime.EventsEmit(a.ctx, "connect", buzzerId)
-
-			// Initialize controller. State will be set in pollControllerInput
-			a.controllers[index] = &Controller{state: nil, mutex: sync.RWMutex{}}
 
 			// Start listening for controller input
 			go a.pollControllerInput(index, buzzerId)
@@ -97,9 +92,10 @@ func (a *App) pollControllerInput(index xinput.ControllerIndex, buzzerId string)
 				}
 			}
 			a.buzzersMutex.Lock()
+			defer a.buzzersMutex.Unlock()
 			a.buzzers = newBuzzers
-			a.buzzersMutex.Unlock()
 			runtime.EventsEmit(a.ctx, "disconnect", buzzerId)
+			// Don't delete the team buzzer id for automatic reconnection
 		}
 	}()
 
@@ -138,22 +134,22 @@ func (a *App) pollControllerInput(index xinput.ControllerIndex, buzzerId string)
 		oldState = newState
 
 		// Update state
-		controller, ok := a.controllers[xinput.ControllerIndex(index)]
-		if !ok {
-			runtime.LogErrorf(a.ctx, "Controller %d not found", index)
-			time.Sleep(10 * time.Millisecond)
-			continue
-		}
-		controller.mutex.Lock()
-		controller.state = newState
-		controller.mutex.Unlock()
+		a.buzzersMutex.Lock()
+		for _, buzzer := range a.buzzers {
+			if buzzer.Id != buzzerId {
+				continue
+			}
 
-		jsonData, err := json.Marshal(newState)
-		if err != nil {
-			runtime.LogError(a.ctx, err.Error())
-			continue
+			buzzer.Controller.state = newState
+
+			// jsonData, err := json.Marshal(newState)
+			// if err != nil {
+			// 	runtime.LogError(a.ctx, err.Error())
+			// 	continue
+			// }
+			// runtime.LogDebugf(a.ctx, "%s: %s", index, jsonData)
 		}
-		runtime.LogDebugf(a.ctx, "%s: %s", index, jsonData)
+		a.buzzersMutex.Unlock()
 
 		time.Sleep(10 * time.Millisecond)
 	}

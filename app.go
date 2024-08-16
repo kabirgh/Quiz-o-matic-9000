@@ -10,8 +10,8 @@ import (
 )
 
 type Controller struct {
+	index xinput.ControllerIndex
 	state *xinput.ControllerState
-	mutex sync.RWMutex
 }
 
 // App struct
@@ -20,13 +20,12 @@ type App struct {
 	teams        []Team
 	buzzers      []Buzzer
 	buzzersMutex sync.Mutex
-	controllers  map[xinput.ControllerIndex]*Controller
 }
 
 type Buzzer struct {
-	Id              string
-	Conn            *websocket.Conn        // buzzer boxes
-	ControllerIndex xinput.ControllerIndex // game controllers
+	Id         string
+	Conn       *websocket.Conn // buzzer boxes
+	Controller *Controller     // game controllers
 }
 
 type Team struct {
@@ -71,9 +70,8 @@ func NewApp() *App {
 			{Name: "", Color: ColorRed, BuzzerId: nil},
 		},
 		buzzers: []Buzzer{
-			{Id: "Keyboard", Conn: nil},
+			{Id: "Keyboard", Conn: nil, Controller: nil},
 		},
-		controllers: make(map[xinput.ControllerIndex]*Controller),
 	}
 }
 
