@@ -3,7 +3,9 @@ import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import usePongAudio from '../lib/usePongAudio';
-import { ReadControllers } from '../wailsjs/wailsjs/go/main/App';
+import { ListTeams, ReadControllers } from '../wailsjs/wailsjs/go/main/App';
+
+const DEBUG = false;
 
 type Player = {
   x: number;
@@ -12,6 +14,7 @@ type Player = {
   color: string;
   buzzerId: string;
   lives: number;
+  type: 'player' | 'dummy';
 };
 
 type Ball = {
@@ -37,7 +40,7 @@ type State = {
   walls: Wall[];
   players: { left: Player; right: Player; top: Player; bottom: Player };
   ball: Ball;
-  keys: { [key: string]: boolean };
+  gameOverText: string;
 };
 
 const SCORE_LENGTH = 14;
@@ -60,6 +63,50 @@ const STARTING_LIVES = 2;
 
 // I'm not sure this works, but here just in case it helps at smaller speeds
 const COLLISION_EXTENSION = 1000;
+
+const DEFAULT_PLAYERS: {
+  left: Player;
+  right: Player;
+  top: Player;
+  bottom: Player;
+} = {
+  top: {
+    x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
+    y: 0 + PADDLE_OFFSET,
+    name: 'top',
+    color: 'white',
+    buzzerId: '',
+    lives: 0,
+    type: 'dummy',
+  },
+  bottom: {
+    x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
+    y: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
+    name: 'bottom',
+    color: 'white',
+    buzzerId: '',
+    lives: 0,
+    type: 'dummy',
+  },
+  left: {
+    x: 0 + PADDLE_OFFSET,
+    y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
+    name: 'left',
+    color: 'white',
+    buzzerId: 'Controller 1',
+    lives: 0,
+    type: 'dummy',
+  },
+  right: {
+    x: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
+    y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
+    name: 'right',
+    color: 'white',
+    buzzerId: '',
+    lives: 0,
+    type: 'dummy',
+  },
+};
 
 const DEFAULT_WALLS: Wall[] = [
   {
@@ -128,7 +175,8 @@ const Quadrapong: NextPage = () => {
   const wallAudioRef = useRef<HTMLAudioElement | null>(null);
   const scoreAudioRef = useRef<HTMLAudioElement | null>(null);
   const [startingLives, setStartingLives] = useState(STARTING_LIVES);
-
+  const [loadingPlayers, setLoadingPlayers] = useState(true);
+  const [numActivePlayers, setNumActivePlayers] = useState(0);
   const [initialAngle] = useState(Math.random() * Math.PI * 2);
   const [, setRenderTrigger] = useState({});
   const stateRef = useRef<State>({
@@ -136,57 +184,111 @@ const Quadrapong: NextPage = () => {
     winner: null,
     phase: 'not_started',
     walls: structuredClone(DEFAULT_WALLS),
-    players: {
-      top: {
-        x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
-        y: 0 + PADDLE_OFFSET,
-        name: 'top',
-        color: '#E8293C',
-        buzzerId: '',
-        lives: startingLives,
-      },
-      bottom: {
-        x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
-        y: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
-        name: 'bottom',
-        color: '#5596E6',
-        buzzerId: '',
-        lives: startingLives,
-      },
-      left: {
-        x: 0 + PADDLE_OFFSET,
-        y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
-        name: 'left',
-        color: '#00B4A0',
-        buzzerId: 'Controller 1',
-        lives: startingLives,
-      },
-      right: {
-        x: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
-        y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
-        name: 'right',
-        color: '#FDD600',
-        buzzerId: '',
-        lives: startingLives,
-      },
-    },
+    players: structuredClone(DEFAULT_PLAYERS),
     ball: {
       x: CANVAS_SIZE / 2,
       y: CANVAS_SIZE / 2,
       dx: INITIAL_BALL_SPEED * Math.sin(initialAngle),
       dy: INITIAL_BALL_SPEED * Math.cos(initialAngle),
     },
-    keys: {
-      a: false,
-      d: false,
-      j: false,
-      l: false,
-      w: false,
-      s: false,
-      i: false,
-      k: false,
-    },
+    gameOverText: '',
   });
+
+  const makeWall = useCallback(
+    (position: 'left' | 'right' | 'bottom' | 'top') => {
+      const { players, walls } = stateRef.current;
+      let newWall: Wall | null = null;
+
+      if (position === 'left') {
+        newWall = {
+          x: WALL_OFFSET,
+          y: WALL_OFFSET + WALL_THICKNESS,
+          width: WALL_THICKNESS,
+          height: CANVAS_SIZE - 2 * WALL_OFFSET - 2 * WALL_THICKNESS,
+          color: players.left.color,
+          position: 'left',
+        };
+      } else if (position === 'right') {
+        newWall = {
+          x: CANVAS_SIZE - WALL_OFFSET - WALL_THICKNESS,
+          y: WALL_OFFSET + WALL_THICKNESS,
+          width: WALL_THICKNESS,
+          height: CANVAS_SIZE - 2 * WALL_OFFSET - 2 * WALL_THICKNESS,
+          color: players.right.color,
+          position: 'right',
+        };
+      } else if (position === 'top') {
+        newWall = {
+          x: WALL_OFFSET + WALL_THICKNESS,
+          y: WALL_OFFSET,
+          width: CANVAS_SIZE - 2 * WALL_OFFSET - 2 * WALL_THICKNESS,
+          height: WALL_THICKNESS,
+          color: players.top.color,
+          position: 'top',
+        };
+      } else if (position === 'bottom') {
+        newWall = {
+          x: WALL_OFFSET + WALL_THICKNESS,
+          y: CANVAS_SIZE - WALL_OFFSET - WALL_THICKNESS,
+          width: CANVAS_SIZE - 2 * WALL_OFFSET - 2 * WALL_THICKNESS,
+          height: WALL_THICKNESS,
+          color: players.bottom.color,
+          position: 'bottom',
+        };
+      }
+
+      // Remove existing walls with overlap because
+      // collisions get weird with multiple walls
+      stateRef.current.walls = walls.filter(
+        (wall) =>
+          wall.x + wall.width <= newWall!.x ||
+          wall.x >= newWall!.x + newWall!.width ||
+          wall.y + wall.height <= newWall!.y ||
+          wall.y >= newWall!.y + newWall!.height,
+      );
+      stateRef.current.walls.push(newWall!);
+    },
+    [],
+  );
+
+  // Get teams from backend
+  useEffect(() => {
+    const state = stateRef.current;
+
+    if (DEBUG) {
+      state.players = structuredClone(DEFAULT_PLAYERS);
+      setLoadingPlayers(false);
+      return;
+    }
+
+    ListTeams()
+      .then((teams) => {
+        const positions: Array<'bottom' | 'top' | 'left' | 'right'> = [
+          'bottom',
+          'top',
+          'right',
+          'left',
+        ];
+
+        for (let i = 0; i < teams.length; i++) {
+          const position = positions[i];
+          const team = teams[i];
+
+          state.players[position] = {
+            name: team.name,
+            color: team.color,
+            buzzerId: team.buzzerId || '',
+            lives: startingLives,
+            x: DEFAULT_PLAYERS[position].x,
+            y: DEFAULT_PLAYERS[position].y,
+            type: 'player',
+          };
+        }
+        setNumActivePlayers(teams.length);
+        setLoadingPlayers(false);
+      })
+      .catch((err) => console.error(err));
+  }, [startingLives, makeWall]); // Re-runs every time startingLives changes, inefficient, eh
 
   useEffect(() => {
     if (canvasRef.current === null) {
@@ -198,7 +300,7 @@ const Quadrapong: NextPage = () => {
     let animationFrameId: number;
 
     const update = (deltaTime: number) => {
-      const { ball, keys, players, walls } = stateRef.current;
+      const { ball, players, walls } = stateRef.current;
 
       if (stateRef.current.phase !== 'in_progress') {
         return;
@@ -384,76 +486,36 @@ const Quadrapong: NextPage = () => {
       ) {
         // Reduce lives. Let it go negative, we use the 0 marker to add
         // additional walls to the game area
-        let newWall: Wall | null = null;
         if (bl < WALL_OFFSET) {
           players.left.lives -= 1;
           playSound('score');
           if (players.left.lives === 0) {
-            newWall = {
-              x: WALL_OFFSET,
-              y: WALL_OFFSET + WALL_THICKNESS,
-              width: WALL_THICKNESS,
-              height: CANVAS_SIZE - 2 * WALL_OFFSET - 2 * WALL_THICKNESS,
-              color: players.left.color,
-              position: 'left',
-            };
+            makeWall('left');
           }
         }
         if (br > CANVAS_SIZE - WALL_OFFSET) {
           players.right.lives -= 1;
           playSound('score');
           if (players.right.lives === 0) {
-            newWall = {
-              x: CANVAS_SIZE - WALL_OFFSET - WALL_THICKNESS,
-              y: WALL_OFFSET + WALL_THICKNESS,
-              width: WALL_THICKNESS,
-              height: CANVAS_SIZE - 2 * WALL_OFFSET - 2 * WALL_THICKNESS,
-              color: players.right.color,
-              position: 'right',
-            };
+            makeWall('right');
           }
         }
         if (bt < WALL_OFFSET) {
           players.top.lives -= 1;
           playSound('score');
           if (players.top.lives === 0) {
-            newWall = {
-              x: WALL_OFFSET + WALL_THICKNESS,
-              y: WALL_OFFSET,
-              width: CANVAS_SIZE - 2 * WALL_OFFSET - 2 * WALL_THICKNESS,
-              height: WALL_THICKNESS,
-              color: players.top.color,
-              position: 'top',
-            };
+            makeWall('top');
           }
         }
         if (bb > CANVAS_SIZE - WALL_OFFSET) {
+          console.log('lives before', players.bottom.lives);
           players.bottom.lives -= 1;
+          console.log('lives after', players.bottom.lives);
           playSound('score');
           if (players.bottom.lives === 0) {
-            newWall = {
-              x: WALL_OFFSET + WALL_THICKNESS,
-              y: CANVAS_SIZE - WALL_OFFSET - WALL_THICKNESS,
-              width: CANVAS_SIZE - 2 * WALL_OFFSET - 2 * WALL_THICKNESS,
-              height: WALL_THICKNESS,
-              color: players.bottom.color,
-              position: 'bottom',
-            };
+            console.log('making wall bottom');
+            makeWall('bottom');
           }
-        }
-
-        if (newWall) {
-          // Remove existing walls with overlap because
-          // collisions get weird with multiple walls
-          stateRef.current.walls = walls.filter(
-            (wall) =>
-              // For some reason need the ! to make wails happy
-              wall.x + wall.width <= newWall!.x ||
-              wall.x >= newWall!.x + newWall!.width ||
-              wall.y + wall.height <= newWall!.y ||
-              wall.y >= newWall!.y + newWall!.height,
-          );
-          stateRef.current.walls.push(newWall);
         }
 
         ball.x = CANVAS_SIZE / 2;
@@ -461,7 +523,7 @@ const Quadrapong: NextPage = () => {
         ball.dx = 0;
         ball.dy = 0;
 
-        // If there is only one player left, game over
+        // If there is only one player left & we started with multiple players, game over
         let playersLeft = 0;
         for (const player of Object.values(players)) {
           if (player.lives > 0) {
@@ -470,8 +532,14 @@ const Quadrapong: NextPage = () => {
             stateRef.current.winner = player;
           }
         }
-        if (playersLeft === 1) {
+        if (playersLeft === 1 && numActivePlayers > 1) {
           stateRef.current.phase = 'game_over';
+          stateRef.current.gameOverText =
+            `${stateRef.current.winner!.name}   wins!`.toUpperCase();
+        } else if (playersLeft === 0 && numActivePlayers == 1) {
+          stateRef.current.phase = 'game_over';
+          stateRef.current.gameOverText = 'GAME   OVER';
+          stateRef.current.winner = null;
         } else {
           stateRef.current.winner = null;
         }
@@ -579,9 +647,9 @@ const Quadrapong: NextPage = () => {
         ctx.font = '36px Pong Score';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = stateRef.current.winner!.color;
+        ctx.fillStyle = stateRef.current.winner?.color || 'white';
         ctx.fillText(
-          `${stateRef.current.winner!.name}   wins!`.toUpperCase(),
+          stateRef.current.gameOverText,
           CANVAS_SIZE / 2,
           CANVAS_SIZE / 2,
         );
@@ -608,59 +676,51 @@ const Quadrapong: NextPage = () => {
 
     animationFrameId = window.requestAnimationFrame(loop);
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key in stateRef.current.keys) {
-        stateRef.current.keys[e.key] = true;
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key in stateRef.current.keys) {
-        stateRef.current.keys[e.key] = false;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
     return () => {
       window.cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [playSound]);
+  }, [playSound, makeWall, numActivePlayers]);
 
   const start = useCallback(() => {
+    const state = stateRef.current;
+
     stateRef.current = {
       ...stateRef.current,
       phase: 'in_progress',
       walls: structuredClone(DEFAULT_WALLS),
+      players: {
+        left: {
+          ...state.players.left,
+          x: 0 + PADDLE_OFFSET,
+          y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
+        },
+        right: {
+          ...state.players.right,
+          x: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
+          y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
+        },
+        top: {
+          ...state.players.top,
+          x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
+          y: 0 + PADDLE_OFFSET,
+        },
+        bottom: {
+          ...state.players.bottom,
+          x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
+          y: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
+        },
+      },
     };
-    stateRef.current.players.left = {
-      ...stateRef.current.players.left,
-      lives: startingLives,
-      x: 0 + PADDLE_OFFSET,
-      y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
-    };
-    stateRef.current.players.right = {
-      ...stateRef.current.players.right,
-      lives: startingLives,
-      x: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
-      y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
-    };
-    stateRef.current.players.top = {
-      ...stateRef.current.players.top,
-      lives: startingLives,
-      x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
-      y: 0 + PADDLE_OFFSET,
-    };
-    stateRef.current.players.bottom = {
-      ...stateRef.current.players.bottom,
-      lives: startingLives,
-      x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
-      y: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
-    };
-  }, [startingLives]);
+
+    for (const [position, player] of Object.entries(stateRef.current.players)) {
+      // If no players
+      if (player.type === 'dummy') {
+        makeWall(position as any);
+      }
+    }
+
+    console.log('stateRef.current', stateRef.current);
+  }, [makeWall]);
 
   useEffect(() => {
     const keydownHandler = (event: any) => {
@@ -697,13 +757,15 @@ const Quadrapong: NextPage = () => {
           type="number"
           placeholder="lives"
           value={startingLives}
+          min={1}
+          max={10}
           onChange={(e) => {
             setStartingLives(e.target.valueAsNumber);
           }}
         />
         <button
           className="text-sm px-3 py-1 mb-0 mt-2"
-          disabled={false}
+          disabled={loadingPlayers}
           onClick={() => start()}
         >
           {stateRef.current.phase === 'not_started' ? 'Start' : 'Play again'}
