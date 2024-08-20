@@ -19,7 +19,7 @@ type App struct {
 	ctx          context.Context
 	teams        []Team
 	buzzers      []Buzzer
-	buzzersMutex sync.Mutex
+	buzzersMutex sync.RWMutex
 }
 
 type Buzzer struct {
