@@ -498,7 +498,7 @@ const JungleSeek: NextPage = () => {
           className="flex flex-col items-center mx-16 w-max"
           style={{ fontFamily: 'Sharkartoon' }}
         >
-          <div className="flex flex-col justify-center items-center bg-[#e7e] px-4 py-4 rounded-lg shadow-md h-[100px] w-24">
+          <div className="flex flex-col justify-center items-center bg-[#e6e] px-4 py-4 rounded-lg shadow-md h-[100px] w-24">
             <div className="text-lg">Target</div>
             <div>
               <img
@@ -508,10 +508,10 @@ const JungleSeek: NextPage = () => {
               />
             </div>
           </div>
-          <div className="flex flex-col justify-center items-center bg-[#e7e] px-4 py-4 rounded-lg shadow-md mt-12 w-24">
-            <div className="mb-2 text-lg">Scores</div>
+          <div className="flex flex-col justify-center items-start bg-[#e6e] px-4 py-4 rounded-lg shadow-md mt-12 w-24">
+            <div className="mb-2 text-lg self-center">Scores</div>
             {stateRef.current.players.map((player) => (
-              <div key={player.name} className="my-2">
+              <div key={player.name} className="my-1 text-sm">
                 {player.name}: {player.score}
               </div>
             ))}

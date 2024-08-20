@@ -508,12 +508,9 @@ const Quadrapong: NextPage = () => {
           }
         }
         if (bb > CANVAS_SIZE - WALL_OFFSET) {
-          console.log('lives before', players.bottom.lives);
           players.bottom.lives -= 1;
-          console.log('lives after', players.bottom.lives);
           playSound('score');
           if (players.bottom.lives === 0) {
-            console.log('making wall bottom');
             makeWall('bottom');
           }
         }
@@ -713,13 +710,10 @@ const Quadrapong: NextPage = () => {
     };
 
     for (const [position, player] of Object.entries(stateRef.current.players)) {
-      // If no players
       if (player.type === 'dummy') {
         makeWall(position as any);
       }
     }
-
-    console.log('stateRef.current', stateRef.current);
   }, [makeWall]);
 
   useEffect(() => {

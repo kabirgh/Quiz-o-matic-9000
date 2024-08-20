@@ -521,7 +521,6 @@ const NinjaRun: NextPage = () => {
         // Increase running speed
         player.msPerFrame -= 0.15;
       }
-      console.log(state.players[0].msPerFrame);
     }
   }, []);
 
