@@ -125,7 +125,11 @@ func (a *App) checkButtonPress(oldState, newState *xinput.ControllerState, buzze
 	if (newState.Buttons.A && !oldState.Buttons.A) ||
 		(newState.Buttons.B && !oldState.Buttons.B) ||
 		(newState.Buttons.X && !oldState.Buttons.X) ||
-		(newState.Buttons.Y && !oldState.Buttons.Y) {
+		(newState.Buttons.Y && !oldState.Buttons.Y) ||
+		(newState.Buttons.DpadUp && !oldState.Buttons.DpadUp) ||
+		(newState.Buttons.DpadDown && !oldState.Buttons.DpadDown) ||
+		(newState.Buttons.DpadLeft && !oldState.Buttons.DpadLeft) ||
+		(newState.Buttons.DpadRight && !oldState.Buttons.DpadRight) {
 		runtime.LogInfof(a.ctx, "Buzzer %s pressed", buzzerId)
 		runtime.EventsEmit(a.ctx, "press", buzzerId)
 	}
