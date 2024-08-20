@@ -7,7 +7,7 @@ import { ListTeams } from '../wailsjs/wailsjs/go/main/App';
 import { EventsOn, WindowFullscreen } from '../wailsjs/wailsjs/runtime/runtime';
 
 // Use dummy players. When false, calls ListTeams to get real players
-const DEBUG = true;
+const DEBUG = false;
 
 //
 // Types
@@ -337,7 +337,7 @@ const DEFAULT_PLAYERS: Player[] = [
   {
     name: 'Player 1',
     color: 'blue',
-    buzzerId: '1',
+    buzzerId: 'Controller 1',
     x: 0,
     y: GAME_HEIGHT * 0.6,
     vx: 0,
