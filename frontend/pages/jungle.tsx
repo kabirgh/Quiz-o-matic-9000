@@ -3,7 +3,7 @@ import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { ReadControllers } from '../wailsjs/wailsjs/go/main/App';
+import { ListTeams, ReadControllers } from '../wailsjs/wailsjs/go/main/App';
 
 const DEBUG = false;
 
@@ -37,8 +37,20 @@ type State = {
 };
 
 const GAME_SIZE = 600;
-const PLAYER_SIZE = 44;
 const GRID_COLS = 12;
+const PLAYER_SIZE = 44;
+const DEFAULT_PLAYERS: Player[] = [
+  {
+    name: 'Player 1',
+    buzzerId: 'Controller 1',
+    color: 'red',
+    score: 0,
+    x: -PLAYER_SIZE,
+    y: -PLAYER_SIZE,
+    state: 'active',
+    stunTimer: 0,
+  },
+];
 const ANIMAL_SIZE = 64;
 const BG_IMAGES = ['/images/jungle/g1n.png', '/images/jungle/g2n.png'];
 const ANIMALS: Animal[] = [
@@ -90,23 +102,40 @@ const JungleSeek: NextPage = () => {
     lastTick: 0,
     phase: 'not_started',
     grid: [],
-    players: [
-      {
-        name: 'Player 1',
-        buzzerId: 'Controller 1',
-        color: 'red',
-        score: 0,
-        x: -PLAYER_SIZE,
-        y: -PLAYER_SIZE,
-        state: 'active',
-        stunTimer: 0,
-      },
-    ],
+    players: [],
     animals: [],
     numAnimals: STARTING_ANIMALS,
     playerFoundAnimal: null,
   });
+  const [loadingPlayers, setLoadingPlayers] = useState(true);
   const [, setRenderTrigger] = useState({});
+
+  // Get teams from backend
+  useEffect(() => {
+    const state = stateRef.current;
+
+    if (DEBUG) {
+      state.players = structuredClone(DEFAULT_PLAYERS);
+      setLoadingPlayers(false);
+      return;
+    }
+
+    ListTeams()
+      .then((teams) => {
+        state.players = teams.map((team) => ({
+          name: team.name,
+          color: team.color,
+          buzzerId: team.buzzerId || '',
+          score: 0,
+          x: 50,
+          y: 50,
+          state: 'active',
+          stunTimer: 0,
+        }));
+        setLoadingPlayers(false);
+      })
+      .catch((err) => console.error(err));
+  }, []);
 
   const isAnimalOverlapping = useCallback((x: number, y: number): boolean => {
     if (!stateRef.current.animals) return false;
@@ -423,7 +452,7 @@ const JungleSeek: NextPage = () => {
                   backgroundColor:
                     player.state === 'stunned'
                       ? 'rgba(255, 255, 255, 0.5)'
-                      : 'rgba(0, 0, 0, 0.25)',
+                      : 'rgba(0, 0, 0, 0.5)',
                   border: `2px solid rgba(0, 0, 0, 0.01)}`,
                   borderRadius: '20%',
                 }}
@@ -483,7 +512,7 @@ const JungleSeek: NextPage = () => {
             <div className="mb-2 text-lg">Scores</div>
             {stateRef.current.players.map((player) => (
               <div key={player.name} className="my-2">
-                {player.name}: {10}
+                {player.name}: {player.score}
               </div>
             ))}
           </div>
@@ -496,6 +525,7 @@ const JungleSeek: NextPage = () => {
                   ? 'hidden'
                   : 'visible',
             }}
+            disabled={loadingPlayers}
             onClick={() => start()}
           >
             Start
