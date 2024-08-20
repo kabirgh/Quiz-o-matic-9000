@@ -13,8 +13,8 @@ func (a *App) ReadControllers() *string {
 	// Buzzer id : controller state
 	state := map[string]xinput.ControllerState{}
 
-	a.buzzersMutex.Lock()
-	defer a.buzzersMutex.Unlock()
+	a.buzzersMutex.RLock()
+	defer a.buzzersMutex.RUnlock()
 	for _, buzzer := range a.buzzers {
 		if buzzer.Controller == nil {
 			// For keyboard or boxes
@@ -47,6 +47,7 @@ func (a *App) ReadControllers() *string {
 func (a *App) pollForControllers() {
 	if xinput.LoadError != nil {
 		runtime.LogErrorf(a.ctx, "xinput load error: %s", xinput.LoadError)
+		return
 	}
 
 	for {
@@ -80,77 +81,64 @@ func (a *App) pollForControllers() {
 }
 
 func (a *App) pollControllerInput(index xinput.ControllerIndex, buzzerId string) {
-	// Controller error or disconnection
-	defer func() {
-		if r := recover(); r != nil {
-			// Remove buzzer
-			runtime.LogInfof(a.ctx, "%s disconnected", index)
-			newBuzzers := []Buzzer{}
-			for _, buzzer := range a.buzzers {
-				if buzzer.Id != buzzerId {
-					newBuzzers = append(newBuzzers, buzzer)
-				}
-			}
-			a.buzzersMutex.Lock()
-			defer a.buzzersMutex.Unlock()
-			a.buzzers = newBuzzers
-			runtime.EventsEmit(a.ctx, "disconnect", buzzerId)
-			// Don't delete the team buzzer id for automatic reconnection
-		}
-	}()
+	defer a.handleDisconnect(buzzerId)
 
 	var oldState *xinput.ControllerState
 	for {
 		newState, err := xinput.GetControllerState(index)
 		if err != nil {
-			runtime.LogError(a.ctx, err.Error())
-			time.Sleep(10 * time.Millisecond)
-			continue
+			runtime.LogErrorf(a.ctx, "Error polling state for %s: %s", buzzerId, err.Error())
+			return
 		}
 
-		// If this is the first time we are reading state, set it and wait till the next tick to record state
 		if oldState == nil {
 			oldState = newState
 			time.Sleep(10 * time.Millisecond)
 			continue
 		}
 
-		o, err := json.Marshal(oldState)
-		if err != nil {
-			runtime.LogError(a.ctx, err.Error())
-			continue
-		}
-		runtime.LogDebugf(a.ctx, "Old state: %s", o)
-
-		// Button pressed
-		if (newState.Buttons.A && !oldState.Buttons.A) ||
-			(newState.Buttons.B && !oldState.Buttons.B) ||
-			(newState.Buttons.X && !oldState.Buttons.X) ||
-			(newState.Buttons.Y && !oldState.Buttons.Y) {
-			runtime.LogInfof(a.ctx, "Buzzer %s pressed", buzzerId)
-			runtime.EventsEmit(a.ctx, "press", buzzerId)
-		}
+		a.checkButtonPress(oldState, newState, buzzerId)
+		a.updateControllerState(buzzerId, newState)
 
 		oldState = newState
-
-		// Update state
-		a.buzzersMutex.Lock()
-		for _, buzzer := range a.buzzers {
-			if buzzer.Id != buzzerId {
-				continue
-			}
-
-			buzzer.Controller.state = newState
-
-			// jsonData, err := json.Marshal(newState)
-			// if err != nil {
-			// 	runtime.LogError(a.ctx, err.Error())
-			// 	continue
-			// }
-			// runtime.LogDebugf(a.ctx, "%s: %s", index, jsonData)
-		}
-		a.buzzersMutex.Unlock()
-
 		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func (a *App) handleDisconnect(buzzerId string) {
+	runtime.LogInfof(a.ctx, "%s disconnected", buzzerId)
+
+	a.buzzersMutex.Lock()
+	defer a.buzzersMutex.Unlock()
+
+	for i, buzzer := range a.buzzers {
+		if buzzer.Id == buzzerId {
+			a.buzzers = append(a.buzzers[:i], a.buzzers[i+1:]...)
+			break
+		}
+	}
+
+	runtime.EventsEmit(a.ctx, "disconnect", buzzerId)
+}
+
+func (a *App) checkButtonPress(oldState, newState *xinput.ControllerState, buzzerId string) {
+	if (newState.Buttons.A && !oldState.Buttons.A) ||
+		(newState.Buttons.B && !oldState.Buttons.B) ||
+		(newState.Buttons.X && !oldState.Buttons.X) ||
+		(newState.Buttons.Y && !oldState.Buttons.Y) {
+		runtime.LogInfof(a.ctx, "Buzzer %s pressed", buzzerId)
+		runtime.EventsEmit(a.ctx, "press", buzzerId)
+	}
+}
+
+func (a *App) updateControllerState(buzzerId string, newState *xinput.ControllerState) {
+	a.buzzersMutex.Lock()
+	defer a.buzzersMutex.Unlock()
+
+	for i, buzzer := range a.buzzers {
+		if buzzer.Id == buzzerId {
+			a.buzzers[i].Controller.state = newState
+			break
+		}
 	}
 }
