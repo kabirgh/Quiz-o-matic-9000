@@ -20,6 +20,13 @@
     url('/fonts/pong-score-extended.ttf') format('truetype');
 }
 
+@font-face {
+  font-family: 'Sharkartoon';
+  src:
+    local(''),
+    url('/fonts/Sharkartoon.ttf') format('truetype');
+}
+
 html,
 body {
   padding: 0;
@@ -31,4 +38,33 @@ body {
 
 .picker-color-unselected:hover {
   box-shadow: 0 0 6px 3px rgba(255, 255, 255, 0.5);
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  10% {
+    transform: translate(-50%, -50%) rotate(8deg);
+  }
+  30% {
+    transform: translate(-50%, -50%) rotate(-8deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(6deg);
+  }
+  70% {
+    transform: translate(-50%, -50%) rotate(-4deg);
+  }
+  90% {
+    transform: translate(-50%, -50%) rotate(2deg);
+  }
+}
+
+/* Doesn't loop nicely so animation time should sync with stun timer */
+.stunned {
+  animation: shake 1s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
 }

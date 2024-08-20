@@ -26,7 +26,7 @@ const games = [
   },
   {
     name: 'Jungle seek',
-    font: 'Trebuchet MS',
+    font: 'Sharkartoon',
     imageUrl: '/images/jungle.png',
     url: '/jungle',
   },
@@ -61,7 +61,7 @@ const GameList: NextPage = () => {
   useEffect(() => {
     const keydownHandler = (event: KeyboardEvent) => {
       if (event.code === 'Backspace') {
-        router.push('/');
+        router.push('/game');
       }
     };
     window.addEventListener('keydown', keydownHandler);

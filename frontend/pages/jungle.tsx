@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ReadControllers } from '../wailsjs/wailsjs/go/main/App';
 
-const DEBUG = true;
+const DEBUG = false;
 
 type Player = {
   name: string;
@@ -16,6 +16,7 @@ type Player = {
   x: number;
   y: number;
   state: 'active' | 'stunned';
+  stunTimer: number;
 };
 
 type Animal = {
@@ -27,11 +28,12 @@ type Animal = {
 
 type State = {
   lastTick: number;
-  phase: 'not_started' | 'in_progress' | 'game_over';
+  phase: 'not_started' | 'in_progress' | 'animal_found' | 'game_over';
   grid: string[][];
   players: Player[];
   animals: Animal[];
   numAnimals: number;
+  playerFoundAnimal: Player | null;
 };
 
 const GAME_SIZE = 600;
@@ -58,6 +60,7 @@ const MAX_ANIMALS = 120;
 const ANIMAL_OFFSCREEN_ALLOWANCE = ANIMAL_SIZE / 3;
 const ANIMAL_OVERLAP_ALLOWANCE = 0.45 * ANIMAL_SIZE; // 0-ANIMAL_SIZE/2
 const JOYSTICK_SENSITIVITY = 0.05;
+const STUN_DURATION = 1000;
 
 type ViewfinderProps = {
   color: string;
@@ -96,10 +99,12 @@ const JungleSeek: NextPage = () => {
         x: -PLAYER_SIZE,
         y: -PLAYER_SIZE,
         state: 'active',
+        stunTimer: 0,
       },
     ],
     animals: [],
     numAnimals: STARTING_ANIMALS,
+    playerFoundAnimal: null,
   });
   const [, setRenderTrigger] = useState({});
 
@@ -209,6 +214,19 @@ const JungleSeek: NextPage = () => {
         const controllers = JSON.parse(json);
 
         for (const player of state.players) {
+          // Update stun timer
+          if (player.state === 'stunned') {
+            player.stunTimer -= deltaTime;
+
+            if (player.stunTimer <= 0) {
+              player.state = 'active';
+              player.stunTimer = 0;
+            } else {
+              // Don't allow player to move while stunned
+              continue;
+            }
+          }
+
           const controller = controllers[player.buzzerId];
           if (!controller) continue;
 
@@ -241,10 +259,17 @@ const JungleSeek: NextPage = () => {
               (player.y * GAME_SIZE) / 100 <= b
             ) {
               player.score++;
-              changeNumberOfAnimals(stateRef.current.numAnimals + 10);
-              generateAnimalPositions();
+              state.phase = 'animal_found';
+              state.playerFoundAnimal = player;
+              // Update game after 2 seconds
+              setTimeout(() => {
+                changeNumberOfAnimals(state.numAnimals + 10);
+                state.phase = 'in_progress';
+              }, 2000);
             } else {
-              // TODO stun player
+              // Stun the player
+              player.state = 'stunned';
+              player.stunTimer = STUN_DURATION;
             }
           }
         }
@@ -286,6 +311,9 @@ const JungleSeek: NextPage = () => {
       // Update player position (as percentage of grid size)
       stateRef.current.players[0].x = (x / GAME_SIZE) * 100;
       stateRef.current.players[0].y = (y / GAME_SIZE) * 100;
+
+      stateRef.current.players[0].state = 'stunned';
+      stateRef.current.players[0].stunTimer = 1000;
     };
 
     window.addEventListener('click', clickHandler);
@@ -322,6 +350,7 @@ const JungleSeek: NextPage = () => {
       phase: 'in_progress',
       animals: [],
       numAnimals: STARTING_ANIMALS,
+      playerFoundAnimal: null,
     };
     generateAnimalPositions();
     if (audioRef.current && audioRef.current.paused) {
@@ -383,6 +412,7 @@ const JungleSeek: NextPage = () => {
             {stateRef.current.players.map((player) => (
               <div
                 key={player.name}
+                className={player.state}
                 style={{
                   position: 'absolute',
                   top: `${player.y}%`,
@@ -390,19 +420,57 @@ const JungleSeek: NextPage = () => {
                   width: `${(PLAYER_SIZE / GAME_SIZE) * 100}%`,
                   height: `${(PLAYER_SIZE / GAME_SIZE) * 100}%`,
                   transform: 'translate(-50%, -50%)', // Center the player on its position
-                  backgroundColor: 'rgba(0, 0, 0, 0.25)',
-                  border: `2px solid rgba(0, 0, 0, 0.01)`,
+                  backgroundColor:
+                    player.state === 'stunned'
+                      ? 'rgba(255, 255, 255, 0.5)'
+                      : 'rgba(0, 0, 0, 0.25)',
+                  border: `2px solid rgba(0, 0, 0, 0.01)}`,
                   borderRadius: '20%',
                 }}
               >
                 <Viewfinder color={player.color} />
               </div>
             ))}
+            {/* Spotlight effect when animal found */}
+            {stateRef.current.phase === 'animal_found' && (
+              <div
+                className="absolute inset-0 bg-black bg-opacity-50 pointer-events-none"
+                style={{
+                  background: `radial-gradient(circle ${ANIMAL_SIZE}px at ${stateRef.current.animals[0]?.x}px ${stateRef.current.animals[0]?.y}px, transparent 0%, rgba(0, 0, 0, 0.6) ${ANIMAL_SIZE}px)`,
+                  transition: 'all 0.5s ease-out',
+                }}
+              />
+            )}
+            {/* Player found animal text */}
+            <div
+              className="text-5xl font-bold"
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                width: '100%',
+                textAlign: 'center',
+                transform: 'translate(-50%, -50%)',
+                fontFamily: 'Sharkartoon',
+                WebkitTextStroke: '0.7px #fff',
+                visibility:
+                  stateRef.current.phase === 'animal_found'
+                    ? 'visible'
+                    : 'hidden',
+              }}
+            >
+              {stateRef.current.playerFoundAnimal?.name} found the{' '}
+              {stateRef.current.animals[0]?.name}!
+            </div>
           </div>
         </div>
-        <div id="right-pane" className="flex flex-col items-center mx-16 w-max">
-          <div className="flex flex-col justify-center items-center bg-[#666] px-4 py-4 rounded-lg shadow-md h-[100px]">
-            <div>Target</div>
+        <div
+          id="right-pane"
+          className="flex flex-col items-center mx-16 w-max"
+          style={{ fontFamily: 'Sharkartoon' }}
+        >
+          <div className="flex flex-col justify-center items-center bg-[#e7e] px-4 py-4 rounded-lg shadow-md h-[100px] w-24">
+            <div className="text-lg">Target</div>
             <div>
               <img
                 className="w-16 h-auto mt-4"
@@ -411,11 +479,11 @@ const JungleSeek: NextPage = () => {
               />
             </div>
           </div>
-          <div className="flex flex-col justify-center items-center bg-[#a0a] px-4 py-4 rounded-lg shadow-md mt-12">
-            <div className="mb-2">Scores</div>
+          <div className="flex flex-col justify-center items-center bg-[#e7e] px-4 py-4 rounded-lg shadow-md mt-12 w-24">
+            <div className="mb-2 text-lg">Scores</div>
             {stateRef.current.players.map((player) => (
               <div key={player.name} className="my-2">
-                {player.name}: {player.score}
+                {player.name}: {10}
               </div>
             ))}
           </div>
@@ -423,13 +491,16 @@ const JungleSeek: NextPage = () => {
             className="text-sm px-3 py-1 mb-0 mt-4"
             style={{
               visibility:
-                stateRef.current.phase === 'in_progress' ? 'hidden' : 'visible',
+                stateRef.current.phase === 'in_progress' ||
+                stateRef.current.phase === 'animal_found'
+                  ? 'hidden'
+                  : 'visible',
             }}
             onClick={() => start()}
           >
             Start
           </button>
-          <button
+          {/* <button
             onClick={() =>
               changeNumberOfAnimals(stateRef.current.numAnimals + 10)
             }
@@ -445,7 +516,7 @@ const JungleSeek: NextPage = () => {
           >
             Remove 10 Animals
           </button>
-          <div>Number of animals: {stateRef.current.numAnimals}</div>
+          <div>Number of animals: {stateRef.current.numAnimals}</div> */}
         </div>
       </div>
       <audio ref={audioRef} src="/audio/jungle/bg.mp3" hidden loop />
