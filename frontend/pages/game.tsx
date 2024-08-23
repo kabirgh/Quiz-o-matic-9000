@@ -18,7 +18,7 @@ const VOLUME_STEP = 0.1;
 
 const Game: NextPage = () => {
   const router = useRouter();
-  const [fullscreen, setFullscreen] = useState(true);
+  const [fullscreen, setFullscreen] = useState(false);
   const [teams, setTeams] = useState([] as Team[]);
   const [played, setPlayed] = useState([] as Team[]);
   const [volume, setVolume] = useState(0.5);
@@ -52,14 +52,14 @@ const Game: NextPage = () => {
     [teams],
   );
 
-  // useEffect(() => {
-  //   // Fullscreen window
-  //   if (fullscreen) {
-  //     WindowFullscreen();
-  //   } else {
-  //     WindowUnfullscreen();
-  //   }
-  // }, [fullscreen]);
+  useEffect(() => {
+    // Fullscreen window
+    if (fullscreen) {
+      WindowFullscreen();
+    } else {
+      WindowUnfullscreen();
+    }
+  }, [fullscreen]);
 
   // Get teams from backend
   useEffect(() => {
