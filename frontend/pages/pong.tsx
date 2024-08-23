@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import usePongAudio from '../lib/usePongAudio';
 import { ListTeams, ReadControllers } from '../wailsjs/wailsjs/go/main/App';
 
-const DEBUG = false;
+const DEBUG = true;
 
 type Player = {
   x: number;
@@ -74,7 +74,7 @@ const DEFAULT_PLAYERS: {
     x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
     y: 0 + PADDLE_OFFSET,
     name: 'top',
-    color: 'white',
+    color: 'red',
     buzzerId: '',
     lives: 0,
     type: 'dummy',
@@ -83,7 +83,7 @@ const DEFAULT_PLAYERS: {
     x: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
     y: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
     name: 'bottom',
-    color: 'white',
+    color: 'blue',
     buzzerId: '',
     lives: 0,
     type: 'dummy',
@@ -92,7 +92,7 @@ const DEFAULT_PLAYERS: {
     x: 0 + PADDLE_OFFSET,
     y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
     name: 'left',
-    color: 'white',
+    color: 'green',
     buzzerId: 'Controller 1',
     lives: 0,
     type: 'dummy',
@@ -101,7 +101,7 @@ const DEFAULT_PLAYERS: {
     x: CANVAS_SIZE - PADDLE_THICKNESS - PADDLE_OFFSET,
     y: CANVAS_SIZE / 2 - PADDLE_LENGTH / 2,
     name: 'right',
-    color: 'white',
+    color: 'yellow',
     buzzerId: '',
     lives: 0,
     type: 'dummy',
@@ -256,7 +256,21 @@ const Quadrapong: NextPage = () => {
     const state = stateRef.current;
 
     if (DEBUG) {
-      state.players = structuredClone(DEFAULT_PLAYERS);
+      state.players = {
+        left: { ...DEFAULT_PLAYERS.left, lives: startingLives, type: 'player' },
+        right: {
+          ...DEFAULT_PLAYERS.right,
+          lives: startingLives,
+          type: 'player',
+        },
+        top: { ...DEFAULT_PLAYERS.top, lives: startingLives, type: 'player' },
+        bottom: {
+          ...DEFAULT_PLAYERS.bottom,
+          lives: startingLives,
+          type: 'player',
+        },
+      };
+      setNumActivePlayers(Object.keys(DEFAULT_PLAYERS).length);
       setLoadingPlayers(false);
       return;
     }
@@ -288,7 +302,7 @@ const Quadrapong: NextPage = () => {
         setLoadingPlayers(false);
       })
       .catch((err) => console.error(err));
-  }, [startingLives, makeWall]); // Re-runs every time startingLives changes, inefficient, eh
+  }, [startingLives]); // Re-runs every time startingLives changes, inefficient, eh
 
   useEffect(() => {
     if (canvasRef.current === null) {
@@ -297,6 +311,16 @@ const Quadrapong: NextPage = () => {
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d')!;
+    const dpr = window.devicePixelRatio || 1;
+    // Set the canvas size in CSS pixels
+    canvas.style.width = `${CANVAS_SIZE}px`;
+    canvas.style.height = `${CANVAS_SIZE}px`;
+    // Set the canvas size in actual pixels
+    canvas.width = CANVAS_SIZE * dpr;
+    canvas.height = CANVAS_SIZE * dpr;
+    // Scale the context to ensure correct drawing operations
+    ctx.scale(dpr, dpr);
+
     let animationFrameId: number;
 
     const update = (deltaTime: number) => {
@@ -307,34 +331,36 @@ const Quadrapong: NextPage = () => {
       }
 
       // Move players
-      ReadControllers().then((json) => {
-        const controllers = JSON.parse(json);
+      if (!DEBUG) {
+        ReadControllers().then((json) => {
+          const controllers = JSON.parse(json);
 
-        for (const [position, player] of Object.entries(players)) {
-          const controller = controllers[player.buzzerId];
-          if (!controller) continue;
+          for (const [position, player] of Object.entries(players)) {
+            const controller = controllers[player.buzzerId];
+            if (!controller) continue;
 
-          if (position === 'left' || position === 'right') {
-            const dy = -controller.LeftJoystick.Y || 0; // invert Y axis
-            player.y = Math.max(
-              PADDLE_STOP,
-              Math.min(
-                CANVAS_SIZE - PADDLE_LENGTH - PADDLE_STOP,
-                player.y + dy * deltaTime * JOYSTICK_SENSITIVITY,
-              ),
-            );
-          } else {
-            const dx = controller.LeftJoystick.X || 0;
-            player.x = Math.max(
-              PADDLE_STOP,
-              Math.min(
-                CANVAS_SIZE - PADDLE_LENGTH - PADDLE_STOP,
-                player.x + dx * deltaTime * JOYSTICK_SENSITIVITY,
-              ),
-            );
+            if (position === 'left' || position === 'right') {
+              const dy = -controller.LeftJoystick.Y || 0; // invert Y axis
+              player.y = Math.max(
+                PADDLE_STOP,
+                Math.min(
+                  CANVAS_SIZE - PADDLE_LENGTH - PADDLE_STOP,
+                  player.y + dy * deltaTime * JOYSTICK_SENSITIVITY,
+                ),
+              );
+            } else {
+              const dx = controller.LeftJoystick.X || 0;
+              player.x = Math.max(
+                PADDLE_STOP,
+                Math.min(
+                  CANVAS_SIZE - PADDLE_LENGTH - PADDLE_STOP,
+                  player.x + dx * deltaTime * JOYSTICK_SENSITIVITY,
+                ),
+              );
+            }
           }
-        }
-      });
+        });
+      }
 
       // Update ball position
       ball.x += ball.dx * deltaTime;
@@ -711,6 +737,7 @@ const Quadrapong: NextPage = () => {
 
     for (const [position, player] of Object.entries(stateRef.current.players)) {
       if (player.type === 'dummy') {
+        player.color = 'white';
         makeWall(position as any);
       }
     }
