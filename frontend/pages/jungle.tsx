@@ -94,6 +94,53 @@ const Viewfinder = ({ color }: ViewfinderProps) => {
   );
 };
 
+const getStartingPlayerPositions = (
+  numPlayers: number,
+): { x: number; y: number }[] => {
+  switch (numPlayers) {
+    case 1:
+      return [{ x: 50, y: 50 }];
+    case 2:
+      return [
+        { x: 50 - (60 * PLAYER_SIZE) / GAME_SIZE, y: 50 },
+        { x: 50 + (60 * PLAYER_SIZE) / GAME_SIZE, y: 50 },
+      ];
+    case 3:
+      return [
+        { x: 50, y: 50 - (60 * PLAYER_SIZE) / GAME_SIZE },
+        {
+          x: 50 - (60 * PLAYER_SIZE) / GAME_SIZE,
+          y: 50 + (60 * PLAYER_SIZE) / GAME_SIZE,
+        },
+        {
+          x: 50 + (60 * PLAYER_SIZE) / GAME_SIZE,
+          y: 50 + (60 * PLAYER_SIZE) / GAME_SIZE,
+        },
+      ];
+    case 4:
+      return [
+        {
+          x: 50 - (60 * PLAYER_SIZE) / GAME_SIZE,
+          y: 50 - (60 * PLAYER_SIZE) / GAME_SIZE,
+        },
+        {
+          x: 50 + (60 * PLAYER_SIZE) / GAME_SIZE,
+          y: 50 - (60 * PLAYER_SIZE) / GAME_SIZE,
+        },
+        {
+          x: 50 - (60 * PLAYER_SIZE) / GAME_SIZE,
+          y: 50 + (60 * PLAYER_SIZE) / GAME_SIZE,
+        },
+        {
+          x: 50 + (60 * PLAYER_SIZE) / GAME_SIZE,
+          y: 50 + (60 * PLAYER_SIZE) / GAME_SIZE,
+        },
+      ];
+    default:
+      throw new Error(`Cannot handle ${numPlayers} players`);
+  }
+};
+
 const JungleSeek: NextPage = () => {
   const router = useRouter();
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -367,13 +414,16 @@ const JungleSeek: NextPage = () => {
   }, [router]);
 
   const start = useCallback(() => {
+    const state = stateRef.current;
+    const positions = getStartingPlayerPositions(state.players.length);
+
     stateRef.current = {
-      grid: stateRef.current.grid,
-      players: stateRef.current.players.map((player) => ({
+      grid: state.grid,
+      players: state.players.map((player, index) => ({
         ...player,
         score: 0,
-        x: 50,
-        y: 50,
+        x: positions[index].x,
+        y: positions[index].y,
       })),
       lastTick: 0,
       phase: 'in_progress',
