@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import usePongAudio from '../lib/usePongAudio';
 import { ListTeams, ReadControllers } from '../wailsjs/wailsjs/go/main/App';
 
-const DEBUG = true;
+const DEBUG = false;
 
 type Player = {
   x: number;
