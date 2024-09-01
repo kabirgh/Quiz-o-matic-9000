@@ -3,6 +3,7 @@ import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useVolumeControl } from '../lib/useVolumeControl';
 import { ListTeams, ReadControllers } from '../wailsjs/wailsjs/go/main/App';
 
 const DEBUG = false;
@@ -144,6 +145,7 @@ const getStartingPlayerPositions = (
 const JungleSeek: NextPage = () => {
   const router = useRouter();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const { volume } = useVolumeControl(0.5);
   const gridRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef<State>({
     lastTick: 0,
@@ -156,6 +158,13 @@ const JungleSeek: NextPage = () => {
   });
   const [loadingPlayers, setLoadingPlayers] = useState(true);
   const [, setRenderTrigger] = useState({});
+
+  useEffect(() => {
+    if (!audioRef.current) {
+      return;
+    }
+    audioRef.current.volume = volume;
+  }, [volume]);
 
   // Get teams from backend
   useEffect(() => {

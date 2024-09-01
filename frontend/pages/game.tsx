@@ -2,9 +2,9 @@ import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { perceptualToAmplitude } from '../lib/perceptual';
 import useClientRect from '../lib/useClientRect';
 import { useFullscreen } from '../lib/useFullscreen';
+import { useVolumeControl } from '../lib/useVolumeControl';
 import { ListTeams } from '../wailsjs/wailsjs/go/main/App';
 import { main } from '../wailsjs/wailsjs/go/models';
 import { EventsOn } from '../wailsjs/wailsjs/runtime/runtime';
@@ -21,7 +21,7 @@ const Game: NextPage = () => {
 
   const [teams, setTeams] = useState([] as Team[]);
   const [played, setPlayed] = useState([] as Team[]);
-  const [volume, setVolume] = useState(0.5);
+  const { volume } = useVolumeControl(0.5);
   const teamRowRef = useRef<HTMLElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const rect = useClientRect(teamRowRef);
@@ -107,12 +107,6 @@ const Game: NextPage = () => {
               query: { fullscreen: fullscreen.toString() },
             });
           }
-        case 'ArrowUp':
-          setVolume((prev) => Math.min(prev + VOLUME_STEP, 1));
-          break;
-        case 'ArrowDown':
-          setVolume((prev) => Math.max(prev - VOLUME_STEP, 0));
-          break;
         case 'Space':
           handleTeamBuzzerPress('Keyboard');
           break;
@@ -130,7 +124,7 @@ const Game: NextPage = () => {
     if (!audioRef.current) {
       return;
     }
-    audioRef.current.volume = perceptualToAmplitude(volume);
+    audioRef.current.volume = volume;
   }, [volume]);
 
   const rowSize = useMemo(() => 100.0 / teams.length, [teams]);

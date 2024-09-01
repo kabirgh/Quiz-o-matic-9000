@@ -12,11 +12,7 @@ import {
   SaveTeams,
 } from '../wailsjs/wailsjs/go/main/App';
 import { main } from '../wailsjs/wailsjs/go/models';
-import {
-  EventsOn,
-  WindowFullscreen,
-  WindowUnfullscreen,
-} from '../wailsjs/wailsjs/runtime/runtime';
+import { EventsOn } from '../wailsjs/wailsjs/runtime/runtime';
 import styles from './index.module.css';
 
 // Typescript will figure out whether to use enum as type or as value

@@ -171,9 +171,6 @@ const Quadrapong: NextPage = () => {
   const router = useRouter();
   const playSound = usePongAudio();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const paddleAudioRef = useRef<HTMLAudioElement | null>(null);
-  const wallAudioRef = useRef<HTMLAudioElement | null>(null);
-  const scoreAudioRef = useRef<HTMLAudioElement | null>(null);
   const [startingLives, setStartingLives] = useState(STARTING_LIVES);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
   const [numActivePlayers, setNumActivePlayers] = useState(0);
@@ -792,24 +789,6 @@ const Quadrapong: NextPage = () => {
           {stateRef.current.phase === 'not_started' ? 'Start' : 'Play again'}
         </button>
       </div>
-      <audio
-        ref={paddleAudioRef}
-        src="/audio/pong/paddle.wav"
-        style={{ display: 'none' }}
-        preload="auto"
-      ></audio>
-      <audio
-        ref={wallAudioRef}
-        src="/audio/pong/wall.wav"
-        style={{ display: 'none' }}
-        preload="auto"
-      ></audio>
-      <audio
-        ref={scoreAudioRef}
-        src="/audio/pong/score.wav"
-        style={{ display: 'none' }}
-        preload="auto"
-      ></audio>
     </div>
   );
 };

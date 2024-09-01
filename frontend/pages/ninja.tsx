@@ -2,9 +2,10 @@ import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useVolumeControl } from '../lib/useVolumeControl';
 import { shuffle } from '../lib/util';
 import { ListTeams } from '../wailsjs/wailsjs/go/main/App';
-import { EventsOn, WindowFullscreen } from '../wailsjs/wailsjs/runtime/runtime';
+import { EventsOn } from '../wailsjs/wailsjs/runtime/runtime';
 
 // Use dummy players. When false, calls ListTeams to get real players
 const DEBUG = false;
@@ -406,6 +407,7 @@ const DEFAULT_PLAYERS: Player[] = [
 const NinjaRun: NextPage = () => {
   const router = useRouter();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const { volume } = useVolumeControl(0.5);
   const [, setRenderTrigger] = useState({});
   const [loadingPlayers, setLoadingPlayers] = useState(true);
 
@@ -423,13 +425,12 @@ const NinjaRun: NextPage = () => {
     speedUpdateAccumulator: 0,
   });
 
-  // Fullscreen window
   useEffect(() => {
-    if (DEBUG) {
+    if (!audioRef.current) {
       return;
     }
-    WindowFullscreen();
-  }, []);
+    audioRef.current.volume = volume;
+  }, [volume]);
 
   // Get teams from backend
   useEffect(() => {
