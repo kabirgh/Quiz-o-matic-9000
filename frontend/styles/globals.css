@@ -46,19 +46,19 @@ body {
     transform: translate(-50%, -50%) rotate(0deg);
   }
   10% {
-    transform: translate(-50%, -50%) rotate(8deg);
+    transform: translate(-50%, -50%) rotate(12deg);
   }
   30% {
-    transform: translate(-50%, -50%) rotate(-8deg);
+    transform: translate(-50%, -50%) rotate(-12deg);
   }
   50% {
-    transform: translate(-50%, -50%) rotate(6deg);
+    transform: translate(-50%, -50%) rotate(8deg);
   }
   70% {
-    transform: translate(-50%, -50%) rotate(-4deg);
+    transform: translate(-50%, -50%) rotate(-5deg);
   }
   90% {
-    transform: translate(-50%, -50%) rotate(2deg);
+    transform: translate(-50%, -50%) rotate(3deg);
   }
 }
 
