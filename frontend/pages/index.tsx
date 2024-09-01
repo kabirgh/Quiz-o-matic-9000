@@ -5,6 +5,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 
 import ColorPicker from '../components/ColorPicker';
 import useClientRect from '../lib/useClientRect';
+import { useFullscreen } from '../lib/useFullscreen';
 import {
   ListBuzzerIds,
   ListTeams,
@@ -25,8 +26,8 @@ const Color = main.Color;
 const Main: NextPage = () => {
   const MAX_TEAMS = 8;
   const router = useRouter();
+  const { fullscreen } = useFullscreen(router.query.fullscreen === 'true');
 
-  const [fullscreen, setFullscreen] = useState(false);
   const [teams, setTeams] = useState([] as main.Team[]);
   const inputRowRef = useRef<HTMLElement>(null);
   const rect = useClientRect(inputRowRef);
@@ -66,14 +67,6 @@ const Main: NextPage = () => {
     },
     [pressedBuzzers],
   );
-
-  useEffect(() => {
-    if (fullscreen) {
-      WindowFullscreen();
-    } else {
-      WindowUnfullscreen();
-    }
-  }, [fullscreen]);
 
   // Get teams from backend
   useEffect(() => {
@@ -148,11 +141,6 @@ const Main: NextPage = () => {
   useEffect(() => {
     const keydownHandler = (event: any) => {
       switch (event.code) {
-        case 'KeyF':
-          if (event.shiftKey) {
-            setFullscreen((prev) => !prev);
-          }
-          break;
         case 'Space':
           handleBuzzerPress('Keyboard');
           break;
@@ -376,7 +364,10 @@ const Main: NextPage = () => {
         onClick={() => {
           const success = validateAndSaveTeams();
           if (success) {
-            router.push('/game');
+            router.push({
+              pathname: '/game',
+              query: { fullscreen: fullscreen.toString() },
+            });
           }
         }}
       >

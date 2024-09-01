@@ -3,6 +3,8 @@ import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import React, { useEffect } from 'react';
 
+import { useFullscreen } from '../lib/useFullscreen';
+
 type GameCardProps = {
   name: string;
   font: string;
@@ -57,18 +59,24 @@ const GameCard = ({ name, font, imageUrl, url, router }: GameCardProps) => (
 
 const GameList: NextPage = () => {
   const router = useRouter();
+  const { fullscreen } = useFullscreen(
+    router.query.fullscreen === 'true' || router.query.fullscreen === undefined,
+  );
 
   useEffect(() => {
     const keydownHandler = (event: KeyboardEvent) => {
       if (event.code === 'Backspace') {
-        router.push('/game');
+        router.push({
+          pathname: '/game',
+          query: { fullscreen: fullscreen.toString() },
+        });
       }
     };
     window.addEventListener('keydown', keydownHandler);
     return () => {
       window.removeEventListener('keydown', keydownHandler);
     };
-  }, [router]);
+  }, [router, fullscreen]);
 
   return (
     <div

@@ -4,13 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { perceptualToAmplitude } from '../lib/perceptual';
 import useClientRect from '../lib/useClientRect';
+import { useFullscreen } from '../lib/useFullscreen';
 import { ListTeams } from '../wailsjs/wailsjs/go/main/App';
 import { main } from '../wailsjs/wailsjs/go/models';
-import {
-  EventsOn,
-  WindowFullscreen,
-  WindowUnfullscreen,
-} from '../wailsjs/wailsjs/runtime/runtime';
+import { EventsOn } from '../wailsjs/wailsjs/runtime/runtime';
 
 type Team = main.Team;
 
@@ -18,7 +15,10 @@ const VOLUME_STEP = 0.1;
 
 const Game: NextPage = () => {
   const router = useRouter();
-  const [fullscreen, setFullscreen] = useState(false);
+  const { fullscreen } = useFullscreen(
+    router.query.fullscreen === 'true' || router.query.fullscreen === undefined,
+  );
+
   const [teams, setTeams] = useState([] as Team[]);
   const [played, setPlayed] = useState([] as Team[]);
   const [volume, setVolume] = useState(0.5);
@@ -51,15 +51,6 @@ const Game: NextPage = () => {
     },
     [teams],
   );
-
-  useEffect(() => {
-    // Fullscreen window
-    if (fullscreen) {
-      WindowFullscreen();
-    } else {
-      WindowUnfullscreen();
-    }
-  }, [fullscreen]);
 
   // Get teams from backend
   useEffect(() => {
@@ -96,9 +87,6 @@ const Game: NextPage = () => {
   useEffect(() => {
     const keydownHandler = (event: any) => {
       switch (event.code) {
-        case 'KeyF':
-          setFullscreen((prev) => !prev);
-          break;
         case 'KeyR':
           setPlayed([]);
           break;
@@ -107,11 +95,17 @@ const Game: NextPage = () => {
           break;
         case 'Backspace':
           setPlayed([]);
-          router.push('/');
+          router.push({
+            pathname: '/',
+            query: { fullscreen: fullscreen.toString() },
+          });
           break;
         case 'KeyG':
           if (event.shiftKey) {
-            router.push('/gamelist');
+            router.push({
+              pathname: '/gamelist',
+              query: { fullscreen: fullscreen.toString() },
+            });
           }
         case 'ArrowUp':
           setVolume((prev) => Math.min(prev + VOLUME_STEP, 1));
@@ -129,7 +123,7 @@ const Game: NextPage = () => {
     return () => {
       removeEventListener('keydown', keydownHandler);
     };
-  }, [router, teams, handleTeamBuzzerPress]);
+  }, [router, teams, handleTeamBuzzerPress, fullscreen]);
 
   // Update volume of hidden audio element
   useEffect(() => {
