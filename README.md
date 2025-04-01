@@ -1,7 +1,12 @@
 # Quiz-o-matic
 Quiz-o-matic is a desktop application that lets you use game controllers as quiz buzzers. Up to 4 teams press a button any of the A/B/X/Y buttons to show up on the screen, in order. The application also supports [DIY buzzers](https://hackaday.io/project/158010-quiz-o-matic-wireless-buzzers).
 
-If you're looking for the old version of this project that supported wireless mice as buzzers, you can find it in the `v1` branch.
+If you're looking for the old version of this project that supported wireless mice as buzzers, you can find it in the `master` branch.
+
+## Demo
+https://github.com/user-attachments/assets/1fb31093-fcfd-47e1-a1da-15cabfa6dc28
+
+
 
 ## Installation
 ### Prerequisites
